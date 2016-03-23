@@ -13,8 +13,6 @@ If you ever made a non-trivial single page application (SPA) in JavaScript, you 
 
 So let's have a look at a typical JavaScript controller that retrieves data from the server:
 
-
-
 {% highlight javascript %}
 function loadCustomer(username) {
   $.get('mysite/customer/byusername/' + username).then(function(customer) {
@@ -77,9 +75,41 @@ First of all, a go block returns a channel, so the caller of this function needs
 
 Also, the code has the same problem with error handling. Currently there isn't any, and it would be implemented in much the same way as the JavaScript version, with boring and noisy if-checks after receiving responses. And if an error actually occurs, propagating it through your functions will hurt your nice APIs.
 
+### Railway-oriented programming
 
-Check out the [Jekyll docs][jekyll-docs] for more info on how to get the most out of Jekyll. File all bugs/feature requests at [Jekyll’s GitHub repo][jekyll-gh]. If you have questions, you can ask them on [Jekyll Talk][jekyll-talk].
+[This is excellent talk][rop-talk] by [Scott Wlaschin][scottw-twitter] introduces the term Railway oriented programming, using F#. It's basically a way of talking about monads that makes it understandable to most people. You should watch it first to get a much better understanding of the concept than you will ever get from me. The talk introduces some very good solutions for transparent error handling. It also does a good job leveraging the functional features of F# rather than making a custom framework.
 
-[jekyll-docs]: http://jekyllrb.com/docs/home
-[jekyll-gh]:   https://github.com/jekyll/jekyll
-[jekyll-talk]: https://talk.jekyllrb.com/
+It does however not deliver a very strong answer on the asynchronous part.
+
+### Channel oriented programming
+
+I could have re-created the same thing in Clojure that Scott did in F#, wrapping pure functions in dual-track adapters that fit nicely into each other in a chain. But I wanted to take it a step further, taking time into account. So I landed on letting the adapter function use channels as input and output. That way it doesn't matter if the inner function is asynchronous or not.
+
+Usually when you make a functional chain that transforms data, you pass the output of one function into the next function. I found that when working at the abstraction level of HTTP calls and application state, it's hard to compose functions in the same way. Quite often you need to pass things like primary keys several steps down the chain.
+
+My way of solving this is to use middleware style. Each function receives accumulated upstream results as a map, and adds its own result entry to the map before passing it downstream.
+
+Let's start by looking at the final code and walk through the small framework needed afterwards:
+
+{% highlight clojure %}
+(defn populate-customer-dashboard [{:keys [customer orders]}]
+  {:customer-name (:name customer)
+   :order-list    (map make-order orders)})
+
+(defn customer-info [{username :username}]
+  (http/get (str "mysite/customer/byusername/" username)))
+
+(defn orders [{customer :customer}]
+  (http/get (str "mysite/customer/" (:id customer) "/orders")))
+
+(defn order-chain [input-channel]
+  (-> input-channel
+      (=http= :customer customer-info)
+      (=http= :orders orders)
+      (=fn= :dashboard populate-customer-dashboard)))
+
+(railway/wrap-rail order-chain {:username "steve"} error-handler)
+{% endhighlight %}
+
+[rop-talk]: https://fsharpforfunandprofit.com/rop/
+[scottw-twitter]: https://twitter.com/scottwlaschin
