@@ -23,7 +23,7 @@ function loadCustomer(username) {
 }
 {% endhighlight %}
 
-You could get quite far with this approach. But it gets messy once you would like to reuse this code chunk but with something else happening in the end, or maybe put the whole thing in a loop after retrieving a bunch of usernames from a server. Using callbacks forces us to explicitly wire things together, making composability possible but far from elegant and natural.
+You could get quite far with this approach. But it gets messy once you would like to reuse this code chunk but with something else happening in the end, or maybe put the whole thing in a loop after retrieving a bunch of usernames from a server. Using callbacks forces us to explicitly wire things together, making composability very hard.
 
 And we did not even get started on the error handling. Here's the same code, with error callbacks:
 
@@ -67,7 +67,7 @@ With cljs-http and core.async, the examples above become:
       (populate-customer-dashboard customer orders))))
 {% endhighlight %}
 
-Using core.async's go-blocks, we can write our HTTP-requests as a regular procedural code without callbacks, and have all responses available as variables in a flattened scope. Using <! inside a go-block, the library will "park" your program and continue with the next line after a value becomes available. Kind of like a breakpoint in your debugger.
+Using core.async's `go`-blocks, we can write our HTTP-requests as a regular procedural code without callbacks, and have all responses available as variables in a flattened scope. Using <! inside a go-block, the library will "park" your program and continue with the next line after a value becomes available. Kind of like a breakpoint in your debugger.
 
 This code still has major issues though.
 
@@ -107,6 +107,12 @@ Let's start by looking at the final code and walk through the small framework ne
       (=http= :customer customer-info)
       (=http= :orders orders)
       (=fn= :dashboard populate-customer-dashboard)))
+      
+(defn error-handler [input-chan]
+  (go
+    (if-let [{:keys [error]} (<! input-chan)]
+        (js/alert "Sorry, error occurred: " error))))
+      
 
 (railway/wrap-rail order-chain {:username "steve"} error-handler)
 {% endhighlight %}
