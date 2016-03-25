@@ -162,7 +162,7 @@ And here's the special case for HTTP::
         {:error error}))))
 {% endhighlight %}
 
-Not very different really, just adapts to the data returned from an HTTP request, which obviously has a different wrapping than a regular function.
+Not very different really, just needs to unwrap the data from the HTTP response before putting it on the channel.
 
 [rop-talk]: https://fsharpforfunandprofit.com/rop/
 [scottw-twitter]: https://twitter.com/scottwlaschin
