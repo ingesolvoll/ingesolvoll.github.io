@@ -49,11 +49,9 @@ Quite quickly, our quite simple logic is buried in deep nesting, duplication and
 
 ### Clojurescript and core.async to the rescue
 
-I really like Clojure (script) and after working with it for a while, I got some ideas on how to apply these ideas here. Most of it should be pretty straightforward, as both F# and Clojure have a strong functional approach.
+Clojure has the brilliant [core.async library][core-async] that gives us a completely different way of working with time in code. It uses channels for delivering messages between parts of your program. The rest of this post will require some basic understanding of core.async, [I recommend this nice and friendly introduction!][async-intro]
 
-Clojure has the brilliant core.async library that gives us a completely different way of working with time in code. It uses channels for delivering messages between parts of your program. The rest of this post will require some basic understanding of core.async, I recommend this nice and friendly introduction !
-
-We also need a library for doing HTTP. cljs-http leans heavily on core.async. It delivers HTTP responses on channels instead of using callbacks, and is just what we need.
+We also need a library for doing HTTP. [cljs-http] leans heavily on core.async. It delivers HTTP responses on channels instead of using callbacks, and is just what we need.
 
 ### Tuning in on channels
 
@@ -62,16 +60,16 @@ With cljs-http and core.async, the examples above become:
 {% highlight clojure %}
 (defn load-customer [username]
   (go
-    (let [customer (<! (http/get (str "mysite/customer/byusername/" username)))
-          orders (<! (http/get (str "mysite/customer/" (:id customer) "/orders")))]
+    (let [customer (:body (<! (http/get (str "mysite/customer/byusername/" username))))
+          orders (:body (<! (http/get (str "mysite/customer/" (:id customer) "/orders"))))]
       (populate-customer-dashboard customer orders))))
 {% endhighlight %}
 
-Using core.async's `go`-blocks, we can write our HTTP-requests as a regular procedural code without callbacks, and have all responses available as variables in a flattened scope. Using <! inside a go-block, the library will "park" your program and continue with the next line after a value becomes available. Kind of like a breakpoint in your debugger.
+Using core.async's `go`-blocks, we can write our HTTP-requests as a regular procedural code without callbacks, and have all responses available as variables in a flattened scope. Using `<!` inside a `go`-block, the library will "park" your program and continue with the next line after a value becomes available. Kind of like a breakpoint in your debugger. The `go`-block itself returns a channel, which will eventually contain the customer dashboard HTML.
 
 This code still has major issues though.
 
-First of all, a go block returns a channel, so the caller of this function needs to take from that channel to get our customer dashboard. This is ok to some extent, but it's a bit clunky to use channels and go-blocks all over the place. Ideally we would like to have our core logic as pure functions, and use channels to transparently connect them.
+First of all, a go block returns a channel, so the caller of this function needs to take from that channel to get our customer dashboard. This is ok to some extent, but it's a bit clunky to use channels all over the place. Ideally we would like to have our core logic as pure functions, and use channels to transparently connect them.
 
 Also, the code has the same problem with error handling. Currently there isn't any, and it would be implemented in much the same way as the JavaScript version, with boring and noisy if-checks after receiving responses. And if an error actually occurs, propagating it through your functions will hurt your nice APIs.
 
@@ -85,7 +83,7 @@ It does however not deliver a very strong answer on the asynchronous part.
 
 I could have re-created the same thing in Clojure that Scott did in F#, wrapping pure functions in dual-track adapters that fit nicely into each other in a chain. But I wanted to take it a step further, taking time into account. So I landed on letting the adapter function use channels as input and output. That way it doesn't matter if the inner function is asynchronous or not.
 
-Usually when you make a functional chain that transforms data, you pass the output of one function into the next function. I found that when working at the abstraction level of HTTP calls and application state, it's hard to compose functions in the same way. Quite often you need to pass things like primary keys several steps down the chain.
+Usually when you make a functional chain that transforms data, you pass the output of one function into the next. I found that when working at the abstraction level of HTTP calls and application state, it's hard to compose functions in the same way. Quite often you need to pass things like primary keys several steps down the chain.
 
 My way of solving this is to use middleware style. Each function receives accumulated upstream results as a map, and adds its own result entry to the map before passing it downstream.
 
@@ -93,8 +91,8 @@ Let's start by looking at the final code and walk through the small framework ne
 
 {% highlight clojure %}
 (defn populate-customer-dashboard [{:keys [customer orders]}]
-  {:customer-name (:name customer)
-   :order-list    (map make-order orders)})
+  ; Produce some nice HTML for customer dashboard
+  )
 
 (defn customer-info [{username :username}]
   (http/get (str "mysite/customer/byusername/" username)))
@@ -164,5 +162,17 @@ And here's the special case for HTTP::
 
 Not very different really, just needs to unwrap the data from the HTTP response before putting it on the channel.
 
+Finally, here's the last piece of the puzzle: The `wrap-rail` function.
+
+{% highlight clojure %}
+(defn wrap-rail [f input error-handler]
+  (-> (go {:success input})
+      f
+      error-handler))
+{% endhighlight %}
+
+[core-async]: http://coreasync.com
+[async-intro]: http:fake
+[cljs-http]: http:fake
 [rop-talk]: https://fsharpforfunandprofit.com/rop/
 [scottw-twitter]: https://twitter.com/scottwlaschin
