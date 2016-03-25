@@ -6,9 +6,9 @@ date:   2016-03-23 21:30:02 +0100
 
 ### The problem
 
-If you ever made a non-trivial single page application (SPA) in JavaScript, you probably ran into some of the same problems as me, namely:
+If you ever made a non-trivial single page application (SPA) in the browser, you probably ran into some of the same problems as me, namely:
 
-* Functions doing HTTP requests with callbacks aren't easily composable
+* Functions doing HTTP requests with callbacks aren't easily composable (among other things)
 * Taking error handling seriously pollutes your beautiful happy path code
 
 So let's have a look at a typical JavaScript controller that retrieves data from the server:
@@ -65,13 +65,18 @@ With cljs-http and core.async, the examples above become:
       (populate-customer-dashboard customer orders))))
 {% endhighlight %}
 
-Using core.async's `go`-blocks, we can write our HTTP-requests as a regular procedural code without callbacks, and have all responses available as variables in a flattened scope. Using `<!` inside a `go`-block, the library will "park" your program and continue with the next line after a value becomes available. Kind of like a breakpoint in your debugger. The `go`-block itself returns a channel, which will eventually contain the customer dashboard HTML.
+Using core.async's `go`-blocks, we can write our HTTP-requests as a regular procedural code without callbacks, and have all responses available as variables in a flattened scope. 
+Using `<!` inside a `go`-block, the library will "park" your program and continue with the next line after a value becomes available. Kind of like a breakpoint in your debugger. 
+The `go`-block itself returns a channel, which will eventually contain the customer dashboard HTML.
 
 This code still has major issues though.
 
-First of all, a go block returns a channel, so the caller of this function needs to take from that channel to get our customer dashboard. This is ok to some extent, but it's a bit clunky to use channels all over the place. Ideally we would like to have our core logic as pure functions, and use channels to transparently connect them.
+First of all, a go block returns a channel, so the caller of this function needs to take from that channel to get our customer dashboard. 
+This is ok to some extent, but it's a bit clunky to use channels all over the place. 
+Ideally we would like to have our core logic as pure functions, and use channels to transparently connect them.
 
-Also, the code has the same problem with error handling. Currently there isn't any, and it would be implemented in much the same way as the JavaScript version, with boring and noisy if-checks after receiving responses. And if an error actually occurs, propagating it through your functions will hurt your nice APIs.
+Also, the code has the same problem with error handling. Currently there isn't any, and it would be implemented in much the same way as the JavaScript version, with boring and noisy if-checks after receiving responses. 
+And if an error actually occurs, propagating it through your functions will hurt your nice APIs.
 
 ### Railway-oriented programming
 
@@ -81,9 +86,12 @@ It does however not deliver a very strong answer on the asynchronous part.
 
 ### Channel oriented programming
 
-I could have re-created the same thing in Clojure that Scott did in F#, wrapping pure functions in dual-track adapters that fit nicely into each other in a chain. But I wanted to take it a step further, taking time into account. So I landed on letting the adapter function use channels as input and output. That way it doesn't matter if the inner function is asynchronous or not.
+I'm not too strong on monads and things, but I *think* I understand the main point: **A monad is a box with something in it that can be unboxed or mapped over**.
+That sounds like core.async channels to me, so I'll give it a try. 
 
-Usually when you make a functional chain that transforms data, you pass the output of one function into the next. I found that when working at the abstraction level of HTTP calls and application state, it's hard to compose functions in the same way. Quite often you need to pass things like primary keys several steps down the chain.
+Usually when you make a functional chain that transforms data, you pass the output of one function into the next. 
+I found that when working at the abstraction level of HTTP calls and application state, it's hard to compose functions in the same way. 
+Quite often you need to pass things like primary keys several steps down the chain.
 
 My way of solving this is to use middleware style. Each function receives accumulated upstream results as a map, and adds its own result entry to the map before passing it downstream.
 
@@ -170,6 +178,8 @@ Finally, here's the last piece of the puzzle: The `wrap-rail` function.
       f
       error-handler))
 {% endhighlight %}
+
+It doesn't do much, just puts the provided input map on a channel, passes it to the wrappped function chain and makes sure that the any errors are caught in the end. 
 
 [core-async]: http://coreasync.com
 [async-intro]: http:fake
