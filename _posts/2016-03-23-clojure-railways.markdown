@@ -80,7 +80,11 @@ And if an error actually occurs, propagating it through your functions will hurt
 
 ### Railway-oriented programming
 
-[This is excellent talk][rop-talk] by [Scott Wlaschin][scottw-twitter] introduces the term Railway oriented programming, using F#. It's basically a way of talking about monads that makes it understandable to most people. You should watch it first to get a much better understanding of the concept than you will ever get from me. The talk introduces some very good solutions for transparent error handling. It also does a good job leveraging the functional features of F# rather than making a custom framework.
+[This is excellent talk][rop-talk] by [Scott Wlaschin][scottw-twitter] introduces the term Railway oriented programming, using F#. 
+It's basically a way of talking about monads that makes it understandable to most people. 
+You should watch it first to get a much better understanding of the concept than you will ever get from me. 
+The talk introduces some very good solutions for transparent error handling. 
+It also does a good job leveraging the functional features of F# rather than making a custom framework.
 
 It does however not deliver a very strong answer on the asynchronous part.
 
@@ -93,44 +97,8 @@ Usually when you make a functional chain that transforms data, you pass the outp
 I found that when working at the abstraction level of HTTP calls and application state, it's hard to compose functions in the same way. 
 Quite often you need to pass things like primary keys several steps down the chain.
 
-My way of solving this is to use middleware style. Each function receives accumulated upstream results as a map, and adds its own result entry to the map before passing it downstream.
-
-Let's start by looking at the final code and walk through the small framework needed afterwards:
-
-{% highlight clojure %}
-(defn populate-customer-dashboard [{:keys [customer orders]}]
-  ; Produce some nice HTML for customer dashboard
-  )
-
-(defn customer-info [{username :username}]
-  (http/get (str "mysite/customer/byusername/" username)))
-
-(defn orders [{customer :customer}]
-  (http/get (str "mysite/customer/" (:id customer) "/orders")))
-
-(defn order-chain [input-channel]
-  (-> input-channel
-      (=http= :customer customer-info)
-      (=http= :orders orders)
-      (=fn= :dashboard populate-customer-dashboard)))
-      
-(defn error-handler [input-chan]
-  (go
-    (if-let [{:keys [error]} (<! input-chan)]
-        ; You probably want prettier error handling than this.
-        (js/alert "Sorry, error occurred: " error))))
-      
-
-(railway/wrap-rail order-chain {:username "steve"} error-handler)
-{% endhighlight %}
-
-The `order-chain` function will  return a channel with a value looking like this, if it succeeds:
-{% highlight clojure %}
-{:customer  {:name "John" :email "john@john.com"}
- :orders    [{:id 1 :date "2015-23-01"} {:id 2 :date "2014-11-11"}]
- :dashboard "<html>Nicely presented dashboard here<html>"}
-{% endhighlight %}
-
+My way of solving this is to use [middleware style][middleware-style]. 
+Each function receives accumulated upstream results as a map, and adds its own result entry to the map before passing it downstream.
 
 ### Channel wrapper functions
 
@@ -179,8 +147,62 @@ Finally, here's the last piece of the puzzle: The `wrap-rail` function.
       error-handler))
 {% endhighlight %}
 
-It doesn't do much, just puts the provided input map on a channel, passes it to the wrappped function chain and makes sure that the any errors are caught in the end. 
+It doesn't do much, just puts the provided input map on a channel, passes it to the wrappped function chain and makes sure that the any errors are caught in the end.
+ 
+### The final result
 
+{% highlight clojure %}
+(defn populate-customer-dashboard [{:keys [customer orders]}]
+  ; Produce some nice HTML for customer dashboard
+  )
+
+(defn customer-info [{username :username}]
+  (http/get (str "mysite/customer/byusername/" username)))
+
+(defn orders [{customer :customer}]
+  (http/get (str "mysite/customer/" (:id customer) "/orders")))
+
+(defn order-chain [input-channel]
+  (-> input-channel
+      (=http= :customer customer-info)
+      (=http= :orders orders)
+      (=fn= :dashboard populate-customer-dashboard)))
+      
+(defn error-handler [input-chan]
+  (go
+    (if-let [{:keys [error]} (<! input-chan)]
+        ; You probably want prettier error handling than this.
+        (js/alert "Sorry, error occurred: " error))))
+      
+
+(wrap-rail order-chain {:username "steve"} error-handler)
+{% endhighlight %}
+
+The `order-chain` function will  return a channel with a value looking like this, if it succeeds:
+{% highlight clojure %}
+{:customer  {:name "John" :email "john@john.com"}
+ :orders    [{:id 1 :date "2015-23-01"} {:id 2 :date "2014-11-11"}]
+ :dashboard "<html>Nicely presented dashboard here<html>"}
+{% endhighlight %}
+
+There are, of course, some trade offs being made here, so a quick summary of pros and cons is in order:
+
+### Pros
+
+* Error handling is transparent and predictable
+* Short circuiting on error makes corrupted app states less likely.
+* Easy to inspect the data flowing through the chain
+* Functions are as pure as they can be
+* [Time is not important][time], your operations are guaranteed to be executed in order.
+
+### Cons
+
+* Each function must accept a map as input, and know the shape of the data in it.
+* When code in core.async channels blow up, debugging can be a pain
+* 
+
+[time]: https://www.youtube.com/watch?v=mtlTHmM1u10
+[middleware-style]: http://clojure-doc.org/articles/cookbooks/middleware.html
 [core-async]: http://coreasync.com
 [async-intro]: http:fake
 [cljs-http]: http:fake
