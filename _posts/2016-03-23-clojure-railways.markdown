@@ -111,11 +111,58 @@ Let's start by looking at the final code and walk through the small framework ne
 (defn error-handler [input-chan]
   (go
     (if-let [{:keys [error]} (<! input-chan)]
+        ; You probably want prettier error handling than this.
         (js/alert "Sorry, error occurred: " error))))
       
 
 (railway/wrap-rail order-chain {:username "steve"} error-handler)
 {% endhighlight %}
+
+The `order-chain` function will  return a channel with a value looking like this, if it succeeds:
+{% highlight clojure %}
+{:customer  {:name "John" :email "john@john.com"}
+ :orders    [{:id 1 :date "2015-23-01"} {:id 2 :date "2014-11-11"}]
+ :dashboard "<html>Nicely presented dashboard here<html>"}
+{% endhighlight %}
+
+
+### Channel wrapper functions
+
+`=fn=` and `=http=` are my wrapper functions so far. I chose names padded with `=`, to indicate 2 tracks in and out. Let's have a look at the simplest one first:
+
+{% highlight clojure %}
+(defn fn->rail [ctx key f]
+  (try
+    {:success (assoc ctx key (f ctx))}
+    (catch js/Object e
+      {:error {:type :general :msg e}})))
+
+(defn =fn= [input-chan key f]
+  (go
+    (let [{:keys [success error]} (<! input-chan)]
+      (if success
+        (fn->rail success key f)
+        {:error error}))))
+{% endhighlight %}
+
+A wrapper always starts out by waiting for the the value of its input channel. If the value has a success key, we pass that value into our wrapped function. If we receive an error key, we short circuit and return the same error key. Upon success of the wrapped function, we `assoc` the returned value into the shared result map.
+
+And here's the special case for HTTP::
+{% highlight clojure %}
+(defn response->rail [ctx key {:keys [body success]}]
+  (if success
+    {:success (assoc ctx key body)}
+    {:error {:type :http :msg (:error body)}}))
+
+(defn =http= [input-chan key f]
+  (go
+    (let [{:keys [success error]} (<! input-chan)]
+      (if success
+        (response->rail success key (<! (f success)))
+        {:error error}))))
+{% endhighlight %}
+
+Not very different really, just adapts to the data returned from an HTTP request, which obviously has a different wrapping than a regular function.
 
 [rop-talk]: https://fsharpforfunandprofit.com/rop/
 [scottw-twitter]: https://twitter.com/scottwlaschin
