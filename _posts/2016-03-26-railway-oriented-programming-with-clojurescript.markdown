@@ -1,7 +1,7 @@
 ---
 layout: post
-title:  "Clojure railways"
-date:   2016-03-23 21:30:02 +0100
+title:  "Railway oriented programming with Clojurescript"
+date:   2016-03-26 21:30:02 +0100
 ---
 
 ### The problem
