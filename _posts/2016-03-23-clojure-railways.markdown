@@ -184,6 +184,21 @@ The `order-chain` function will  return a channel with a value looking like this
  :dashboard "<html>Nicely presented dashboard here<html>"}
 {% endhighlight %}
 
+Now, if you would like to use `order-chain` for something different and still keep the nice guarantees provided by the architecture, that's trivial.
+
+{% highlight clojure %}
+(defn username-search [{query :query}]
+  (http/get "mysite/search" {:q query}))
+
+(defn search-for-orders [input-channel]
+  (-> input-channel
+      (=http= :username username-search)
+      order-chain))
+      
+(wrap-rail search-for-orders {:query "ste*"} error-handler)
+{% endhighlight %}
+
+
 There are, of course, some trade offs being made here, so a quick summary of pros and cons is in order:
 
 ### Pros
