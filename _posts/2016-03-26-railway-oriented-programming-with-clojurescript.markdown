@@ -11,6 +11,7 @@ If you ever made a non-trivial single page application (SPA) in the browser, you
 * Functions doing HTTP requests with callbacks aren't easily composable (among other things)
 * Taking error handling seriously pollutes your beautiful happy path code
 
+### JavaScript current day
 So let's have a look at a typical JavaScript controller that retrieves data from the server:
 
 {% highlight javascript %}
