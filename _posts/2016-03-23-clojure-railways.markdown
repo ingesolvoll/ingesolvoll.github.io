@@ -51,7 +51,7 @@ Quite quickly, our quite simple logic is buried in deep nesting, duplication and
 
 Clojure has the brilliant [core.async library][core-async] that gives us a completely different way of working with time in code. It uses channels for delivering messages between parts of your program. The rest of this post will require some basic understanding of core.async, [I recommend this nice and friendly introduction!][async-intro]
 
-We also need a library for doing HTTP. [cljs-http] leans heavily on core.async. It delivers HTTP responses on channels instead of using callbacks, and is just what we need.
+We also need a library for doing HTTP. The [cljs-http] library leans heavily on core.async. It delivers HTTP responses on channels instead of using callbacks, and is just what we need.
 
 ### Tuning in on channels
 
@@ -81,12 +81,11 @@ And if an error actually occurs, propagating it through your functions will hurt
 ### Railway-oriented programming
 
 [This is excellent talk][rop-talk] by [Scott Wlaschin][scottw-twitter] introduces the term Railway oriented programming, using F#. 
-It's basically a way of talking about monads that makes it understandable to most people. 
-You should watch it first to get a much better understanding of the concept than you will ever get from me. 
-The talk introduces some very good solutions for transparent error handling. 
-It also does a good job leveraging the functional features of F# rather than making a custom framework.
-
-It does however not deliver a very strong answer on the asynchronous part.
+It's basically a way of talking about monads that makes it understandable to most people. The idea is to take a pure function with regular inputs and outputs,
+and wrap it in a function that can accept and return either success or failure. If a failure is received, we return the failure value. On success, we call our regular wrapped function.
+This way, an error will shut down the whole chain of functions as they will all just pass through the same error return.
+ 
+You should head over to Scott's site and spend some minutes reading or watching the talk to get a much better understanding of the concept than you will ever get from me. 
 
 ### Channel oriented programming
 
@@ -189,6 +188,7 @@ There are, of course, some trade offs being made here, so a quick summary of pro
 
 ### Pros
 
+* Asynchronous code can be written as a simple procedure
 * Error handling is transparent and predictable
 * Short circuiting on error makes corrupted app states less likely.
 * Easy to inspect the data flowing through the chain
@@ -199,12 +199,26 @@ There are, of course, some trade offs being made here, so a quick summary of pro
 
 * Each function must accept a map as input, and know the shape of the data in it.
 * When code in core.async channels blow up, debugging can be a pain
-* 
+
+### Conclusion
+
+This approach has proven to be quite efficient on my most recent project, the ability to freely reuse asynchronous
+functions to chain together operations from the UI-layer is quite useful and a lot of fun. Some extra complexity was introduced
+to make it happen, but the result is quite powerful.
+
+I would consider this micro-architecture to be an experiment, it could be greatly improved or even completely replaced with something else.
+That's the beauty of Clojure, the conciseness and functional style tends to make code easily replaceable. 
+If you don't like something, delete it and put in the thing you want. 
+I'm hoping to expand on this in future blog posts, looking at things like:
+ 
+* Use of macros for smoother API and more functional flex and power
+* Support for more flexibility, like iterations, structure of input/output
+* Support for doing custom error handling where needed.
 
 [time]: https://www.youtube.com/watch?v=mtlTHmM1u10
 [middleware-style]: http://clojure-doc.org/articles/cookbooks/middleware.html
-[core-async]: http://coreasync.com
-[async-intro]: http:fake
-[cljs-http]: http:fake
+[core-async]: https://github.com/clojure/core.async
+[async-intro]: http://www.braveclojure.com/core-async/
+[cljs-http]: https://github.com/r0man/cljs-http
 [rop-talk]: https://fsharpforfunandprofit.com/rop/
 [scottw-twitter]: https://twitter.com/scottwlaschin
