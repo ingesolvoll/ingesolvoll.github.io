@@ -68,6 +68,7 @@ The end result is rendered below.
 </code></pre>
 
 You should try to edit the configuration. The chart will re-render immediately when you make changes. Try things like:
+
 * Change the title
 * Change the category names
 * Change chart type from `:bar` to `:line`
