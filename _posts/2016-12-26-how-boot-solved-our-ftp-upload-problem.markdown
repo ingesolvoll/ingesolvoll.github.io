@@ -109,7 +109,8 @@ The full boot build file is listed below. I'm completely new to boot, so I proba
          (str (.toString dir) "\\" path)))
 
 (defn ftp-upload! [url local-path remote-path]
-  (with-ftp [client url]
+  (with-ftp [client url
+              :file-type :binary]
             (.setBufferSize client 1024000)
             (client-put client local-path remote-path))
 
