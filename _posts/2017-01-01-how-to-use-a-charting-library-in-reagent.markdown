@@ -10,8 +10,10 @@ There are several high quality charting libraries made for the browser. I chose 
 ### This web page is interactive
 I will be using the amazing [KLIPSE] plugin in this blog post. It turns all the code samples into live code that you can edit and experiment with.
 
-First, we need to load Reagent and React into the page. This should take about 5-10 seconds. After that, it will show the result `nil`, as expected for the `require` statement
-<pre><code class="language-klipse">(require '[reagent.core :as r])
+First, we need to load Reagent, React and highcharts into the page. This should take about 5-10 seconds. After that, it will show the result `nil`, as expected for the `require` statement
+<pre><code class="language-klipse">
+(require '[reagent.core :as r])
+(require '[cljsjs.highcharts])
 </code></pre>
 
 The config for our chart will reside in a reagent `atom`, allowing us to live-configure the chart later on.
@@ -92,7 +94,6 @@ As you can see, integrating any library in Reagent is fairly simple and concise.
         selector_reagent: '.language-reagent'
     };
 </script>
-<script src="http://code.highcharts.com/highcharts.js"></script>
 <script src="https://storage.googleapis.com/app.klipse.tech/plugin/js/klipse_plugin.js?v=5.0.0"></script>
 
 
