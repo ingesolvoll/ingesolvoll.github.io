@@ -79,12 +79,6 @@ As you can see, integrating any library in Reagent is fairly simple and concise.
 
 <link rel="stylesheet" type="text/css" href="https://storage.googleapis.com/app.klipse.tech/css/codemirror.css">
 
-<style>
-.klipse-container:before {
-    content: "**** Rendered Component ****";
-    font-weight: bold;
-    font-family: monospace;
-}
 
 </style>
 
