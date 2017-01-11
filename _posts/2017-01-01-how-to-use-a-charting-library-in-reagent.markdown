@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: klipse
 title:  "How to use a charting library in Reagent"
 date:   2017-01-01 19:30:00 +0100
 ---
@@ -76,20 +76,6 @@ You should try to edit the configuration. The chart will re-render immediately w
 * Change chart type from `:bar` to `:line`
 
 As you can see, integrating any library in Reagent is fairly simple and concise. There are some pitfalls, some important ones have been covered here. The most significant one is the use of [externs] when you build your app with advanced optimizations. If you use [cljsjs], that won't be an issue. Chart libraries like highcharts, C3, D3 are on cljsjs.
-
-<link rel="stylesheet" type="text/css" href="https://storage.googleapis.com/app.klipse.tech/css/codemirror.css">
-
-
-</style>
-
-<script>
-    window.klipse_settings = {
-        selector: '.language-klipse',
-        selector_reagent: '.language-reagent'
-    };
-</script>
-<script src="https://storage.googleapis.com/app.klipse.tech/plugin/js/klipse_plugin.js?v=5.0.0"></script>
-
 
 [example]: http://www.highcharts.com/docs/getting-started/your-first-chart
 [KLIPSE]: http://blog.klipse.tech/reagent/2016/12/31/reagent-in-klipse.html
