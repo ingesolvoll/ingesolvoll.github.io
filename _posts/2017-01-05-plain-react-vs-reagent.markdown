@@ -6,11 +6,11 @@ date:   2017-01-05 19:00:00 +0100
 
 > > What's the point in using ClojureScript with Om/Reagent/Rum/Quiescent instead of plain ReactJS? Is it better or is it just different?
 
-That's an excellent question that was asked on [reddit] some weeks ago. Many commented, most of them seem to not have read the question. I would like to try to answer it in this post. It will be slightly superficial, but hopefully informative!
+This excellent question was asked on [reddit] some weeks ago. Many commented, most of them seem to not have read the question. I would like to try to answer it in this post. It will be superficial, but hopefully entertaining and informative!
 
 We'll be comparing ReactJS/JSX (JavaScript) with [Reagent] (ClojureScript ReactJS wrapper). I'll use the official ReactJS [tutorial] as my example, exploring the differences.
 
-**The code samples are as identical as possible, in order to give the best possible comparison.**  
+**I've tried to keep the code as equal as possible between the languages.**  
 
 ### 1. A trivial component
 The app we're making is a Tic-tac-toe game. The most basic building block for this game will be the `square` component, representing one clickable square on the board.
@@ -124,7 +124,16 @@ render() {
      [:button {:on-click #(reset! state (vanilla-state))} "Reset game!"]]))
 {% endhighlight %}
 
-### 4. Code vs Data
+### Conclusion: Code vs Data
+
+Hopefully I managed to show you a few things that Reagent brings to the table:
+* Concise and compact
+* Creating functional style components is super easy
+* Immutable data is the default
+
+But the thing that fundamentally separates it from React/JSX is the **data focus**.
+* JSX creates instructions: `React.createElement('div')`.
+* Reagent creates data structures: `[:div]`.
 
 
 
