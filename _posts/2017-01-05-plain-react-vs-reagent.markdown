@@ -4,11 +4,18 @@ title:  "JSX vs Clojurescript: the showdown"
 date:   2017-01-05 19:00:00 +0100
 ---
 
-### Better or different?
-In this post i would like to show off some of the differences between using "plain" React and a Clojurescript wrapper like Reagent. Not an easy subject to cover in one blog post, so I'll have to focus on a simple example. The official [tutorial] on the ReactJS web pages seems like a good fit.
+> > What's the point in using ClojureScript with Om/Reagent/Rum/Quiescent instead of plain ReactJS? Is it better or is it just different?
 
-The app we're making is a Tic-tac-toe game. The most basic building block for this game will be the `square` component, representing each of the 9 squares on the board. The very minimal contents of this component showcases some of the primary differences between vanilla React and "The Clojurescript way". Here's the JSX version:
+That's an excellent question that was asked on [reddit] some weeks ago. Many commented, most of them seem to not have read the question. I would like to try to answer it in this post. It will be slightly superficial, but hopefully informative!
 
+We'll be comparing ReactJS/JSX (JavaScript) with [Reagent] (ClojureScript ReactJS wrapper). I'll use the official ReactJS [tutorial] as my example, exploring the differences.
+
+**The code samples are as identical as possible, in order to give the best possible comparison.**  
+
+### 1. A trivial component
+The app we're making is a Tic-tac-toe game. The most basic building block for this game will be the `square` component, representing one clickable square on the board.
+
+**JSX**
 {% highlight js %}
 function Square(props) {
   return (
@@ -19,9 +26,7 @@ function Square(props) {
 }
 {% endhighlight %}
 
-Component parameters are received as a map of `props`. In order to avoid noisy low level markup code, React uses a special HTML-like language called JSX to describe the layout. The result is much more concise code, at the cost of an additional build step. One of the pain points of JSX is that it breaks tooling. As you can see above, my blog platform does not have code highlighting support for JSX.
-
-Now over to the Reagent version:
+**Reagent**
 
 {% highlight clojure %}
 (defn square [value on-click]
@@ -29,28 +34,50 @@ Now over to the Reagent version:
    value])
 {% endhighlight %}
 
-The most striking difference is the Hiccup syntax for representing markup. Hiccup is a Clojure standard that uses regular Clojure vectors and maps to represent tags and attributes. No special syntax or language features is required to manipulate this structure, regular Clojure functions will do just fine. Having the full Clojure standard library at your disposal for generating HTML is very powerful.
+Clojure is without doubt a more concise language than JS. It also has a very neat standard for representing markup, called **Hiccup**. Here's the complete Hiccup syntax guide:
 
-Another thing to notice is the component parameters. React puts them into a `props` map, whereas Reagent uses standard Clojure function parameters. **A Reagent component is just a function, component parameters are just function parameters.**
+`[:tagname.cssClassName#elementId {:some "attribute"} child-content-here]`
 
-### State management
-Reagent, being a wrapper around React, shares React's philosophy of centralized state and one-way data flow. In React, the way to trigger UI updates is to use `this.setState(nextState)`. Let's see an example from our tic-tac-toe game:
+What you see is immutable Clojure data structures. Your markup is literally data that will be converted to React components later on. But right now it's data, which is **a much bigger deal than you might think.**
 
+In the opposite corner our React square has some proprietary properties:
+
+* A custom way of conveying component parameters (`props`)
+* Renames the CSS property `class` to `className`
+* Special syntax `<div>{props.theMessage}</div>` for putting dynamic content in markup
+* Embedding HTML-like markup inside JS (JSX)
+
+Some people love JSX, others don't. The code formatter on this blog clearly doesn't. I won't get into that discussion, there's a more interesting point to make: **JSX produces function calls, Reagent produces data**. More on that later.
+
+### 2. Event listeners and state
+
+When you click on a square, our handler is called. I modified the official example slightly, putting the side effect free code in a [pure function].
+
+**Javascript**
 {% highlight js %}
-handleClick(i) {
-    if (this.state.squares[i]) { return; }
-    const squares = this.state.squares.slice();
-    squares[i] = this.state.xIsNext ? 'X' : 'O';
-    this.setState({squares: squares,
-                   xIsNext: !this.state.xIsNext});
+
+function makeMove(state, i) {
+  if (state.squares[i]) {
+    return state;
   }
+  else {
+    const squares = state.squares.slice();
+    squares[i] = state.xIsNext ? 'X' : 'O';
+    return {squares: squares,
+            xIsNext: !this.state.xIsNext}
+  }
+}
+
+handleClick(i) {
+  this.setState(makeMove(this.state, i));
+}
 {% endhighlight %}
 
-Before we show the equivalent click handler in Reagent, we need to cover the subject of `atoms`. An `atom` is a generic data container that's able to notify its surroundings when the data inside change. `this.setState(something)` in React becomes `(reset! state something)` in Reagent. State in React is tied to the implementation of components, in Reagent it is a standalone concept.
 
+**Clojurescript**
 {% highlight clojure %}
 
-(defn make-a-move [state i]
+(defn make-move [state i]
   (if (-> state :squares (get i))
     state
     (-> state
@@ -61,54 +88,47 @@ Before we show the equivalent click handler in Reagent, we need to cover the sub
   (swap! state make-a-move i))
 {% endhighlight %}
 
-For the Reagent version above I chose to do it the Clojure way, putting the pure code in a separate function that does nothing but transforming the state map. All that's left for the click handler to do is to mutate the state using a pure function and `atom` semantics.
+The Javascript code listed above is written with immutability in mind, because the React developers see the value of promoting that style. But functional programming in Javascript requires knowledge and discipline. Like applying the little `slice()` copy trick in `makeMove`.
+
+In Clojure, immutability is the default. In my opinion that's the steepest learning curve of the language, not the syntax. **If you spent your life mutating variables to get stuff done, programming without mutation is like eating soup with a fork.** But once you're in, you desperately don't want to go back.
+
+### 3. The big render
+
+The main render function connects the smaller parts into a whole. As you can see below, most of the differences have already been covered. Please review for yourself the pros and cons of each approach:
+
+**JSX render function**
+{% highlight js %}
+render() {
+    let status = "Next player: ${this.state.xIsNext ? 'X' : 'O'}";
+    return (
+      <div>
+        <div className="status">{status}</div>
+        <div className="board-row"> {[0,1,2].map ((i) => this.renderSquare(i))}  </div>
+        <div className="board-row"> {[3,4,5].map ((i) => this.renderSquare(i))}  </div>
+        <div className="board-row"> {[6,7,8].map ((i) => this.renderSquare(i))}  </div>
+        <button onClick= {() => this.reset()}> Reset </button>
+      </div>
+    );
+  }
+{% endhighlight %}
+
+**Reagent render function**
+{% highlight clojure %}
+(defn render [state]
+  (let [square (partial square state)]
+    [:div
+     [:div.status "Next player " (if (:x-is-next @state) "X" "O")]
+     [:div.board-row (doall (map square [0 1 2]))]
+     [:div.board-row (doall (map square [3 4 5]))]
+     [:div.board-row (doall (map square [6 7 8]))]
+     [:button {:on-click #(reset! state (vanilla-state))} "Reset game!"]]))
+{% endhighlight %}
+
+### 4. Code vs Data
 
 
 
-Before we get started, we need to load ReactJS and Reagent (Clojurescript wrapper for React) onto the page:
-<pre><code class="language-klipse">
-(require '[reagent.core :as r])
-</code></pre>
-
-
-<pre><code class="jsx" data-gist-id="ingesolvoll/101256657c664581832db5a231178cc7">
-</code></pre>
-
-<pre><code class="language-reagent" data-gist-id="https://gist.github.com/ingesolvoll/3107df3d65599496c42bbc086427c5b0">
-</code></pre>
-
-
-<style>
-.board-row:after {
-  clear: both;
-  content: "";
-  display: table;
-}
-
-.square {
-  background: black;
-  color: white;
-  border: 1px solid #999;
-  float: left;
-  font-size: 24px;
-  font-weight: bold;
-  line-height: 34px;
-  height: 34px;
-  margin-right: -1px;
-  margin-top: -1px;
-  padding: 0;
-  text-align: center;
-  width: 34px;
-}
-
-.game {
-  display: flex;
-  flex-direction: row;
-}
-
-.game-info {
-  margin-left: 20px;
-}
-</style>
-
+[pure function]: https://en.wikipedia.org/wiki/Pure_function
 [tutorial]: https://facebook.github.io/react/tutorial/tutorial.html
+[reagent]: https://reagent-project.github.io/
+[reddit]: https://www.reddit.com/r/Clojure/comments/5lkkwb/is_anyone_in_the_clojure_community_using_plain/
