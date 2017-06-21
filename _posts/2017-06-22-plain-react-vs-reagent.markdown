@@ -6,7 +6,7 @@ date:   2017-06-22 19:00:00 +0100
 
 > > What's the point in using ClojureScript with Om/Reagent/Rum/Quiescent instead of plain ReactJS? Is it better or is it just different?
 
-This excellent question was asked on [reddit] some weeks ago. Many commented, most of them seem to not have read the question. I would like to try to answer it in this post. It will be superficial, but hopefully entertaining and informative!
+This excellent question was asked on [reddit] some time ago. Many commented, most of them seem to not have read the question. I would like to try to answer it in this post. It will be superficial, but hopefully entertaining and informative!
 
 We'll be comparing ReactJS/JSX (JavaScript) with [Reagent] (ClojureScript ReactJS wrapper). I'll use the official ReactJS [tutorial] as my example, exploring the differences.
 
