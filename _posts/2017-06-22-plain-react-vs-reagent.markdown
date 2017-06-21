@@ -1,7 +1,7 @@
 ---
 layout: klipse
 title:  "JSX vs Clojurescript: the showdown"
-date:   2017-01-05 19:00:00 +0100
+date:   2017-06-22 19:00:00 +0100
 ---
 
 > > What's the point in using ClojureScript with Om/Reagent/Rum/Quiescent instead of plain ReactJS? Is it better or is it just different?
