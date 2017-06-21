@@ -85,7 +85,7 @@ handleClick(i) {
       (update-in [:x-is-next] not))))
 
 (defn handle-click [i]
-  (swap! state make-a-move i))
+  (swap! state make-move i))
 {% endhighlight %}
 
 The Javascript code listed above is written with immutability in mind, because the React developers see the value of promoting that style. But functional programming in Javascript requires knowledge and discipline. Like applying the little `slice()` copy trick in `makeMove`.
@@ -135,7 +135,9 @@ But the thing that fundamentally separates it from React/JSX is the **data focus
 * JSX creates instructions: `React.createElement('div')`.
 * Reagent creates data structures: `[:div]`.
 
+The former is opaque, hard to inspect at runtime. The latter is highly transparent, and easily inspectable in more than one way.
 
+Your app is declared using nothing but pure data, using nothing but plain functions to manipulate the data. The very rich Clojure standard library with functions like `map`, `filter` and `reduce` at your disposal, without any funky new syntax to learn.
 
 [pure function]: https://en.wikipedia.org/wiki/Pure_function
 [tutorial]: https://facebook.github.io/react/tutorial/tutorial.html
