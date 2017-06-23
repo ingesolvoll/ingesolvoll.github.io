@@ -17,13 +17,10 @@ The app we're making is a Tic-tac-toe game. The most basic building block for th
 
 **JSX**
 {% highlight js %}
-function Square(props) {
-  return (
-    <button className="square" onClick={() => props.onClick()}>
-      {props.value}
-    </button>
-  );
-}
+const Square = (props) =>
+<button className="square" onClick={props.onClick}>
+  {props.value}
+</button>
 {% endhighlight %}
 
 **Reagent**
