@@ -1,5 +1,5 @@
 ---
-layout: klipse
+layout: post
 title:  "JSX vs Clojurescript: the showdown"
 date:   2017-06-22 19:00:00 +0100
 ---
