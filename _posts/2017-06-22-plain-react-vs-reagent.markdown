@@ -33,7 +33,7 @@ const Square = (props) =>
 
 Clojure is without doubt a more concise language than JS. It also has a very neat standard for representing markup, called **Hiccup**. Here's the complete Hiccup syntax guide:
 
-`[:tagname.cssClassName#elementId {:some "attribute"} child-content-here]`
+`[:tagname#elementId.cssClassName {:some "attribute"} child-content-here]`
 
 What you see is immutable Clojure data structures. Your markup is literally data that will be converted to React components later on. But right now it's data, which is **a much bigger deal than you might think.**
 
