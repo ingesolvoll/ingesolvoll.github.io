@@ -4,6 +4,10 @@ title:  "Re-frame: side effects as data"
 date:   2017-06-29 12:00:00 +0100
 ---
 
+Re-frame has a simple but powerful architecture that enables you to express yourself
+in pure data structures even with side-effect heavy code.
+In this post I will show a simple example of the patterns used.
+
 ### Re-frame
 
 I'm going to assume that you have some basic knowledge about [Re-frame],
@@ -97,6 +101,9 @@ gives us the handler return value.
                context))))
 </code></pre>
 
+Printing the event effect data to the console would probably be a much better idea, but since this
+is a demo inlined in a blog, we'll use an alert box.
+
 ### A "pure" side effecting handler
 
 Now we have what we need to be able to inspect or test our side effect. We inject our interceptor into the event handler when
@@ -110,7 +117,8 @@ registering it.
 nil
 </code></pre>
 
-And finally, here's a snippet that uses our new handler.
+And finally, here's a snippet that uses our new handler. Click the button to observe
+the alert box with the event data, prior to the actual effect.
 
 <pre><code class="language-reagent">
 [:button
