@@ -1,7 +1,7 @@
 ---
 layout: klipse
-title:  "Tell me what, not how!"
-date:   2017-06-05 19:00:00 +0100
+title:  "Re-frame: side effects as data"
+date:   2017-06-29 12:00:00 +0100
 ---
 
 ### Re-frame
@@ -117,7 +117,7 @@ And finally, here's a snippet that uses our new handler.
 
 The difference between `(js/alert message)` and `{:alert message}` might seem insignificant. But having the trace of data
 at your fingertips makes a world of a difference when you're stuck trying to figure out why your chain of HTTP requests
- has stalled.
+ has stalled. Unit testing also becomes trivial, as opposed to sniffing the presence of an alert box.
 
 ### Event ping pong
 
