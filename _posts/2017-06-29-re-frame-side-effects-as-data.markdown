@@ -64,7 +64,10 @@ If we manage to express our side effects as data, this overview becomes trivial 
 blocks. First out are pluggable effects. You are free to create your own types of side effects, using re-frame's `reg-fx` function.
 
 <pre><code class="language-klipse">
-(re-frame/reg-fx :alert (fn [message] (js/alert (str "I was INDIRECTLY asked to print this: " message))))
+(re-frame/reg-fx
+    :alert
+    (fn [message]
+        (js/alert (str "I was INDIRECTLY asked to print this: " message))))
 nil
 </code></pre>
 
