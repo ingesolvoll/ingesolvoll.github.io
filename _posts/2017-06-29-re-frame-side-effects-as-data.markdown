@@ -132,8 +132,12 @@ need to name the event handler that should receive the callback. It very quickly
 I would love to see something like the keechma pipelines for re-frame, and I'm experimenting to see if I can find a nice
 and practical solution.
 
+If you find this subject interesting hit me up on [reddit] or [twitter]!
+
 [interceptors]: https://github.com/Day8/re-frame/blob/master/docs/Interceptors.md
 [re-frame]: https://github.com/Day8/re-frame
 [reagent]: https://reagent-project.github.io/
 [keechma]: https://keechma.com/
 [pipelines]: https://keechma.com/news/introducing-keechma-toolbox-part-1-pipelines/
+[reddit]: https://www.reddit.com/r/Clojure/comments/6k8ylv/reframe_side_effects_as_data/
+[twitter]: https://twitter.com/ingesol/status/880443720977588224
