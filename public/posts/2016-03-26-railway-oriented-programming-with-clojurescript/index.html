@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"><![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"><![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"><![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--><html lang="en"><!--<![endif]-->
+<head>
+    <!-- Website Template designed by www.downloadwebsitetemplates.co.uk -->
+    <!-- Modified to fit Cryogen.-->
+    <meta charset="UTF-8">
+    <title>Inge Solvoll&#39;s Blog: Railway oriented programming with Clojurescript</title>
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="images/ico/apple-touch-icon-144.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="images/ico/apple-touch-icon-114.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="images/ico/apple-touch-icon-72.png">
+    <link rel="apple-touch-icon-precomposed" href="images/ico/apple-touch-icon-57.png">
+    <link rel="shortcut icon" href="images/ico/favicon.png">
+    <!--[if IE]><![endif]-->
+    <link href="/css/buttons.css" rel="stylesheet" type="text/css" />
+    <link href="/css/menu.css" rel="stylesheet" type="text/css" />
+    <link href="/css/reset.css" rel="stylesheet" type="text/css" />
+    <link href="/css/style.css" rel="stylesheet" type="text/css" />
+    <link href="/css/typography.css" rel="stylesheet" type="text/css" />
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/tomorrow-night-eighties.min.css">
+    <!--[if lt IE 9]><script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+</head>
+<body>
+
+<div id="left">
+
+    <p id="logo">
+        <a title="Inge Solvoll&#39;s Blog" href="/">
+            <span class="fa fa-rocket"></span>
+            <span class="text">Nucleus</span>
+        </a>
+    </p>
+
+    <div id="menucont" class="bodycontainer clearfix">
+        <div class="menutitle">
+            <p><span class="fa fa-reorder"></span><strong>Menu</strong></p>
+        </div>
+        <ul class="menu">
+            <li ><a title="Home" href="/">Home</a></li>
+            <li ><a title="Archives" href="/archives/">Archives</a></li>
+            
+            <li ><a title="Tags" href="/tags/">Tags</a></li>
+            
+            
+            <li >
+                <a href="/pages/about/">About</a>
+            </li>
+            
+            <li><a title="RSS" href="/feed.xml">RSS</a></li>
+        </ul>
+    </div>
+
+    <div id="socialmedia" class="clearfix">
+        <ul>
+            <li><a title="GitHub" href="./" rel="external"><span class="fa fa-github"></span></a></li>
+            <li><a title="Stack Overflow" href="./" rel="external"><span class="fa fa-stack-overflow"></span></a></li>
+            <li><a title="Google+" href="./" rel="external"><span class="fa fa-google-plus"></span></a></li>
+            <li><a title="LinkedIn" href="./" rel="external"><span class="fa fa-linkedin"></span></a></li>
+            <li><a title="Last.fm" href="./" rel="external"><span class="fa fa-lastfm"></span></a></li>
+        </ul>
+    </div>
+
+</div>
+
+<div id="right" class="clearfix">
+    
+<div id="post">
+    <div class="post-header">
+    <div id="post-meta" class="row">
+        <strong>26. mars 2016</strong>
+        
+    </div>
+    <h1>Railway oriented programming with Clojurescript</h1>
+</div>
+<div>
+    
+    <h3 id="the&#95;problem">The problem</h3><p>If you ever made a non-trivial single page application (SPA) in the browser, you probably ran into some of the same problems as me, namely:</p><ul><li>Functions doing HTTP requests with callbacks aren't easily composable (among other things)</li><li>Taking error handling seriously pollutes your beautiful happy path code</li></ul><h3 id="javascript&#95;current&#95;day">JavaScript current day</h3><p>So let's have a look at a typical JavaScript controller that retrieves data from the server:</p><pre><code>function loadCustomer&#40;username&#41; {
+  $.get&#40;'mysite/customer/byusername/' + username&#41;.then&#40;function&#40;customer&#41; {
+    $.get&#40;'mysite/customer/' + customer.id + '/order'&#41;.then&#40;function&#40;orders&#41; {
+        populateCustomerDashboard&#40;customer, orders&#41;;
+    }&#41;;
+  }&#41;;
+}
+</code></pre><p>You could get quite far with this approach. But it gets messy once you would like to reuse this code chunk but with something else happening in the end, or maybe put the whole thing in a loop after retrieving a bunch of usernames from a server. Using callbacks forces us to explicitly wire things together, making composability very hard.</p><p>And we did not even get started on the error handling. Here's the same code, with error callbacks:</p><pre><code>function loadCustomer&#40;username&#41; {
+  $.get&#40;'mysite/customer/byusername/' + username&#41;.then&#40;function&#40;customer&#41; {
+    $.get&#40;'mysite/customer/' + customer.id + '/order'&#41;.then&#40;function&#40;orders&#41; {
+        populateCustomerDashboard&#40;customer, orders&#41;;
+    }&#41;.error&#40;function&#40;error&#41; {
+          // Some proper error handling here
+        }&#41;;
+  }&#41;.error&#40;function&#40;error&#41; {
+    // Some proper error handling here
+  }&#41;;
+}
+</code></pre><p>Quite quickly, our quite simple logic is buried in deep nesting, duplication and noise. Seeing this, I started looking for solutions that would allow me to:</p><ul><li>Write my asynchronous logic in a clean and linear way, without nesting and callbacks</li><li>Apply robust error handling transparently</li><li>Leverage host language's built in features, avoiding custom made constructs</li></ul><h3 id="clojurescript&#95;and&#95;core.async&#95;to&#95;the&#95;rescue">Clojurescript and core.async to the rescue</h3><p>Clojure has the brilliant <a href='https://github.com/clojure/core.async'>core.async library</a> that gives us a completely different way of working with time in code. It uses channels for delivering messages between parts of your program. The rest of this post will require some basic understanding of core.async, <a href='http://www.braveclojure.com/core-async/'>I recommend this nice and friendly introduction!</a></p><p>We also need a library for doing HTTP. The [cljs-http] library leans heavily on core.async. It delivers HTTP responses on channels instead of using callbacks, and is just what we need.</p><h3 id="tuning&#95;in&#95;on&#95;channels">Tuning in on channels</h3><p>With cljs-http and core.async, the examples above become:</p><pre><code>&#40;defn load-customer &#91;username&#93;
+  &#40;go
+    &#40;let &#91;customer &#40;:body &#40;&lt;! &#40;http/get &#40;str &quot;mysite/customer/byusername/&quot; username&#41;&#41;&#41;&#41;
+          orders &#40;:body &#40;&lt;! &#40;http/get &#40;str &quot;mysite/customer/&quot; &#40;:id customer&#41; &quot;/orders&quot;&#41;&#41;&#41;&#41;&#93;
+      &#40;populate-customer-dashboard customer orders&#41;&#41;&#41;&#41;
+</code></pre><p>Using core.async's <code>go</code>-blocks, we can write our HTTP-requests as a regular procedural code without callbacks, and have all responses available as variables in a flattened scope.  Using <code>&lt;!</code> inside a <code>go</code>-block, the library will "park" your program and continue with the next line after a value becomes available. Kind of like a breakpoint in your debugger.  The <code>go</code>-block itself returns a channel, which will eventually contain the customer dashboard HTML.</p><p>This code still has major issues though.</p><p>First of all, a go block returns a channel, so the caller of this function needs to take from that channel to get our customer dashboard.  This is ok to some extent, but it's a bit clunky to use channels all over the place.  Ideally we would like to have our core logic as pure functions, and use channels to transparently connect them.</p><p>Also, the code has the same problem with error handling. Currently there isn't any, and it would be implemented in much the same way as the JavaScript version, with boring and noisy if-checks after receiving responses.  And if an error actually occurs, propagating it through your functions will hurt your nice APIs.</p><h3 id="railway-oriented&#95;programming">Railway-oriented programming</h3><p><a href='https://fsharpforfunandprofit.com/rop/'>This is excellent talk</a> by <a href='https://twitter.com/scottwlaschin'>Scott Wlaschin</a> introduces the term Railway oriented programming, using F#.  It's basically a way of talking about monads that makes it understandable to most people. The idea is to take a pure function with regular inputs and outputs, and wrap it in a function that can accept and return either success or failure. If a failure is received, we return the failure value. On success, we call our regular wrapped function. This way, an error will shut down the whole chain of functions as they will all just pass through the same error return.  </p><p>You should head over to Scott's site and spend some minutes reading or watching the talk to get a much better understanding of the concept than you will ever get from me. </p><h3 id="channel&#95;oriented&#95;programming">Channel oriented programming</h3><p>I'm not too strong on monads and things, but I <em>think</em> I understand the main point: <strong>A monad is a box with something in it that can be unboxed or mapped over</strong>. That sounds like core.async channels to me, so I'll give it a try. </p><p>Usually when you make a functional chain that transforms data, you pass the output of one function into the next.  I found that when working at the abstraction level of HTTP calls and application state, it's hard to compose functions in the same way.  Quite often you need to pass things like primary keys several steps down the chain.</p><p>My way of solving this is to use <a href='http://clojure-doc.org/articles/cookbooks/middleware.html'>middleware style</a>.  Each function receives accumulated upstream results as a map, and adds its own result entry to the map before passing it downstream.</p><h3 id="channel&#95;wrapper&#95;functions">Channel wrapper functions</h3><p><code>=fn=</code> and <code>=http=</code> are my wrapper functions so far. I chose names padded with <code>=</code>, to indicate 2 tracks in and out. Let's have a look at the simplest one first:</p><pre><code>&#40;defn fn-&gt;rail &#91;ctx key f&#93;
+  &#40;try
+    {:success &#40;assoc ctx key &#40;f ctx&#41;&#41;}
+    &#40;catch js/Object e
+      {:error {:type :general :msg e}}&#41;&#41;&#41;
+
+&#40;defn =fn= &#91;input-chan key f&#93;
+  &#40;go
+    &#40;let &#91;{:keys &#91;success error&#93;} &#40;&lt;! input-chan&#41;&#93;
+      &#40;if success
+        &#40;fn-&gt;rail success key f&#41;
+        {:error error}&#41;&#41;&#41;&#41;
+</code></pre><p>A wrapper always starts out by waiting for the the value of its input channel. If the value has a success key, we pass that value into our wrapped function. If we receive an error key, we short circuit and return the same error key. Upon success of the wrapped function, we <code>assoc</code> the returned value into the shared result map.</p><p>And here's the special case for HTTP::</p><pre><code>&#40;defn response-&gt;rail &#91;ctx key {:keys &#91;body success&#93;}&#93;
+  &#40;if success
+    {:success &#40;assoc ctx key body&#41;}
+    {:error {:type :http :msg &#40;:error body&#41;}}&#41;&#41;
+
+&#40;defn =http= &#91;input-chan key f&#93;
+  &#40;go
+    &#40;let &#91;{:keys &#91;success error&#93;} &#40;&lt;! input-chan&#41;&#93;
+      &#40;if success
+        &#40;response-&gt;rail success key &#40;&lt;! &#40;f success&#41;&#41;&#41;
+        {:error error}&#41;&#41;&#41;&#41;
+</code></pre><p>Not very different really, just needs to unwrap the data from the HTTP response before putting it on the channel.</p><p>Finally, here's the last piece of the puzzle: The <code>wrap-rail</code> function.</p><pre><code>&#40;defn wrap-rail &#91;f input error-handler&#93;
+  &#40;-&gt; &#40;go {:success input}&#41;
+      f
+      error-handler&#41;&#41;
+</code></pre><p>It doesn't do much, just puts the provided input map on a channel, passes it to the wrappped function chain and makes sure that the any errors are caught in the end.  </p><h3 id="the&#95;final&#95;result">The final result</h3><pre><code>&#40;defn populate-customer-dashboard &#91;{:keys &#91;customer orders&#93;}&#93;
+  ; Produce some nice HTML for customer dashboard
+  &#41;
+
+&#40;defn customer-info &#91;{username :username}&#93;
+  &#40;http/get &#40;str &quot;mysite/customer/byusername/&quot; username&#41;&#41;&#41;
+
+&#40;defn orders &#91;{customer :customer}&#93;
+  &#40;http/get &#40;str &quot;mysite/customer/&quot; &#40;:id customer&#41; &quot;/orders&quot;&#41;&#41;&#41;
+
+&#40;defn order-chain &#91;input-channel&#93;
+  &#40;-&gt; input-channel
+      &#40;=http= :customer customer-info&#41;
+      &#40;=http= :orders orders&#41;
+      &#40;=fn= :dashboard populate-customer-dashboard&#41;&#41;&#41;
+      
+&#40;defn error-handler &#91;input-chan&#93;
+  &#40;go
+    &#40;if-let &#91;{:keys &#91;error&#93;} &#40;&lt;! input-chan&#41;&#93;
+        ; You probably want prettier error handling than this.
+        &#40;js/alert &quot;Sorry, error occurred: &quot; error&#41;&#41;&#41;&#41;
+      
+
+&#40;wrap-rail order-chain {:username &quot;steve&quot;} error-handler&#41;
+</code></pre><p>The <code>order-chain</code> function will  return a channel with a value looking like this, if it succeeds:</p><pre><code>{:customer  {:name &quot;John&quot; :email &quot;john@john.com&quot;}
+ :orders    &#91;{:id 1 :date &quot;2015-23-01&quot;} {:id 2 :date &quot;2014-11-11&quot;}&#93;
+ :dashboard &quot;&lt;html&gt;Nicely presented dashboard here&lt;html&gt;&quot;}
+</code></pre><p>Now, if you would like to use <code>order-chain</code> for something different and still keep the nice guarantees provided by the architecture, that's trivial.</p><pre><code>&#40;defn username-search &#91;{query :query}&#93;
+  &#40;http/get &quot;mysite/search&quot; {:q query}&#41;&#41;
+
+&#40;defn search-for-orders &#91;input-channel&#93;
+  &#40;-&gt; input-channel
+      &#40;=http= :username username-search&#41;
+      order-chain&#41;&#41;
+      
+&#40;wrap-rail search-for-orders {:query &quot;ste&#42;&quot;} error-handler&#41;
+</code></pre><p>There are, of course, some trade offs being made here, so a quick summary of pros and cons is in order:</p><h3 id="pros">Pros</h3><ul><li>Asynchronous code can be written as a simple procedure</li><li>Error handling is transparent and predictable</li><li>Short circuiting on error makes corrupted app states less likely.</li><li>Easy to inspect the data flowing through the chain</li><li>Functions are as pure as they can be</li><li><a href='https://www.youtube.com/watch?v=mtlTHmM1u10'>Time is not important</a>, your operations are guaranteed to be executed in order.</li></ul><h3 id="cons">Cons</h3><ul><li>Each function must accept a map as input, and know the shape of the data in it.</li><li>When code in core.async channels blow up, debugging can be a pain</li></ul><h3 id="conclusion">Conclusion</h3><p>This approach has proven to be quite efficient on my most recent project, the ability to freely reuse asynchronous functions to chain together operations from the UI-layer is quite useful and a lot of fun. Some extra complexity was introduced to make it happen, but the result is quite powerful.</p><p>I would consider this micro-architecture to be an experiment, it could be greatly improved or even completely replaced with something else. That's the beauty of Clojure, the conciseness and functional style tends to make code easily replaceable.  If you don't like something, delete it and put in the thing you want.  I'm hoping to expand on this in future blog posts, looking at things like:  </p><ul><li>Use of macros for smoother API and more functional flex and power</li><li>Support for more flexibility, like iterations, structure of input/output</li><li>Support for doing custom error handling where needed.</li></ul>
+</div>
+
+<div id="post-tags">
+    <br/> 
+    <b>Tags: </b>
+    
+    <a href="/tags/clojure/">clojure</a>
+    
+</div>
+
+<br/>
+
+    <div id="prev-next">
+        
+        <a class="button" href="/posts/2016-12-26-how-boot-solved-our-ftp-upload-problem/">&laquo; How boot solved our FTP problem</a>
+        
+        
+    </div>
+
+    
+
+
+</div>
+
+<hr/>
+<div id="footercont" class="clearfix">Copyright &copy; 2017 Inge Solvoll
+    <p>Powered by <a href="http://cryogenweb.org">Cryogen</a> | Free Website Template by <a title="free website templates" href="http://www.downloadwebsitetemplates.co.uk" rel="external">Download Website Templates</a></p>
+
+</div>
+</div>
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="/js/highlight.pack.js" type="text/javascript"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script src="/js/scripts.js" type="text/javascript"></script>
+
+
+</body>
+</html>

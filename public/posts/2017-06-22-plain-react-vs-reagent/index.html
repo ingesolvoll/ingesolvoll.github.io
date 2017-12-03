@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"><![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"><![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"><![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--><html lang="en"><!--<![endif]-->
+<head>
+    <!-- Website Template designed by www.downloadwebsitetemplates.co.uk -->
+    <!-- Modified to fit Cryogen.-->
+    <meta charset="UTF-8">
+    <title>Inge Solvoll&#39;s Blog: JSX vs Clojurescript: the showdown</title>
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="images/ico/apple-touch-icon-144.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="images/ico/apple-touch-icon-114.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="images/ico/apple-touch-icon-72.png">
+    <link rel="apple-touch-icon-precomposed" href="images/ico/apple-touch-icon-57.png">
+    <link rel="shortcut icon" href="images/ico/favicon.png">
+    <!--[if IE]><![endif]-->
+    <link href="/css/buttons.css" rel="stylesheet" type="text/css" />
+    <link href="/css/menu.css" rel="stylesheet" type="text/css" />
+    <link href="/css/reset.css" rel="stylesheet" type="text/css" />
+    <link href="/css/style.css" rel="stylesheet" type="text/css" />
+    <link href="/css/typography.css" rel="stylesheet" type="text/css" />
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/tomorrow-night-eighties.min.css">
+    <!--[if lt IE 9]><script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+</head>
+<body>
+
+<div id="left">
+
+    <p id="logo">
+        <a title="Inge Solvoll&#39;s Blog" href="/">
+            <span class="fa fa-rocket"></span>
+            <span class="text">Nucleus</span>
+        </a>
+    </p>
+
+    <div id="menucont" class="bodycontainer clearfix">
+        <div class="menutitle">
+            <p><span class="fa fa-reorder"></span><strong>Menu</strong></p>
+        </div>
+        <ul class="menu">
+            <li ><a title="Home" href="/">Home</a></li>
+            <li ><a title="Archives" href="/archives/">Archives</a></li>
+            
+            <li ><a title="Tags" href="/tags/">Tags</a></li>
+            
+            
+            <li >
+                <a href="/pages/about/">About</a>
+            </li>
+            
+            <li><a title="RSS" href="/feed.xml">RSS</a></li>
+        </ul>
+    </div>
+
+    <div id="socialmedia" class="clearfix">
+        <ul>
+            <li><a title="GitHub" href="./" rel="external"><span class="fa fa-github"></span></a></li>
+            <li><a title="Stack Overflow" href="./" rel="external"><span class="fa fa-stack-overflow"></span></a></li>
+            <li><a title="Google+" href="./" rel="external"><span class="fa fa-google-plus"></span></a></li>
+            <li><a title="LinkedIn" href="./" rel="external"><span class="fa fa-linkedin"></span></a></li>
+            <li><a title="Last.fm" href="./" rel="external"><span class="fa fa-lastfm"></span></a></li>
+        </ul>
+    </div>
+
+</div>
+
+<div id="right" class="clearfix">
+    
+<div id="post">
+    <div class="post-header">
+    <div id="post-meta" class="row">
+        <strong>22. juni 2017</strong>
+        
+    </div>
+    <h1>JSX vs Clojurescript: the showdown</h1>
+</div>
+<div>
+    
+    <blockquote><p> &gt; What's the point in using ClojureScript with Om/Reagent/Rum/Quiescent instead of plain ReactJS? Is it better or is it just different? </p></blockquote><p>This excellent question was asked on [reddit] some time ago. Many commented, most of them seem to not have read the question. I would like to try to answer it in this post. It will be superficial, but hopefully entertaining and informative!</p><p>We'll be comparing ReactJS/JSX (JavaScript) with [Reagent] (ClojureScript ReactJS wrapper). I'll use the official ReactJS [tutorial] as my example, exploring the differences.</p><p><strong>I've tried to keep the code as equal as possible between the languages.</strong><br /></p><h3 id="1._a_trivial_component">1. A trivial component</h3><p>The app we're making is a Tic-tac-toe game. The most basic building block for this game will be the <code>square</code> component, representing one clickable square on the board.</p><p><strong>JSX</strong></p><pre><code>const Square = (props) =&gt;
+&lt;button className="square" onClick={props.onClick}&gt;
+  {props.value}
+&lt;/button&gt;
+</code></pre><p><strong>Reagent</strong></p><pre><code>(defn square [value on-click]
+  [:button.square {:on-click on-click}
+   value])
+</code></pre><p>Clojure is without doubt a more concise language than JS. It also has a very neat standard for representing markup, called <strong>Hiccup</strong>. Here's the complete Hiccup syntax guide:</p><p><code>[:tagname#elementId.cssClassName {:some "attribute"} child-content-here]</code></p><p>What you see is immutable Clojure data structures. Your markup is literally data that will be converted to React components later on. But right now it's data, which is <strong>a much bigger deal than you might think.</strong></p><p>In the opposite corner our React square has some proprietary properties:</p><ul><li>A custom way of conveying component parameters (<code>props</code>)</li><li>Renames the CSS property <code>class</code> to <code>className</code></li><li>Special syntax <code>&lt;div&gt;{props.theMessage}&lt;/div&gt;</code> for putting dynamic content in markup</li><li>Embedding HTML-like markup inside JS (JSX)</li></ul><p>Some people love JSX, others don't. The code formatter on this blog clearly doesn't. I won't get into that discussion, there's a more interesting point to make: <strong>JSX produces function calls, Reagent produces data</strong>. More on that later.</p><h3 id="2._event_listeners_and_state">2. Event listeners and state</h3><p>When you click on a square, our handler is called. I modified the official example slightly, putting the side effect free code in a [pure function].</p><p><strong>Javascript</strong></p><pre><code>function makeMove(state, i) {
+  if (state.squares[i]) {
+    return state;
+  }
+  else {
+    const squares = state.squares.slice();
+    squares[i] = state.xIsNext ? 'X' : 'O';
+    return {squares: squares,
+            xIsNext: !this.state.xIsNext}
+  }
+}
+
+handleClick(i) {
+  this.setState(makeMove(this.state, i));
+}
+</code></pre><p><strong>Clojurescript</strong></p><pre><code>
+(defn make-move [state i]
+  (if (-&gt; state :squares (get i))
+    state
+    (-&gt; state
+      (assoc-in [:squares i] (if (:x-is-next state) "X" "O"))
+      (update-in [:x-is-next] not))))
+
+(defn handle-click [i]
+  (swap! state make-move i))
+</code></pre><p>The Javascript code listed above is written with immutability in mind, because the React developers see the value of promoting that style. But functional programming in Javascript requires knowledge and discipline. Like applying the little <code>slice()</code> copy trick in <code>makeMove</code>.</p><p>In Clojure, immutability is the default. In my opinion that's the steepest learning curve of the language, not the syntax. <strong>If you spent your life mutating variables to get stuff done, programming without mutation is like eating soup with a fork.</strong> But once you're in, you desperately don't want to go back.</p><h3 id="3._the_big_render">3. The big render</h3><p>The main render function connects the smaller parts into a whole. As you can see below, most of the differences have already been covered. Please review for yourself the pros and cons of each approach:</p><p><strong>JSX render function</strong></p><pre><code>render() {
+    let status = "Next player: ${this.state.xIsNext ? 'X' : 'O'}";
+    return (
+      &lt;div&gt;
+        &lt;div className="status"&gt;{status}&lt;/div&gt;
+        &lt;div className="board-row"&gt; {[0,1,2].map ((i) =&gt; this.renderSquare(i))}  &lt;/div&gt;
+        &lt;div className="board-row"&gt; {[3,4,5].map ((i) =&gt; this.renderSquare(i))}  &lt;/div&gt;
+        &lt;div className="board-row"&gt; {[6,7,8].map ((i) =&gt; this.renderSquare(i))}  &lt;/div&gt;
+        &lt;button onClick= {() =&gt; this.reset()}&gt; Reset &lt;/button&gt;
+      &lt;/div&gt;
+    );
+  }
+</code></pre><p><strong>Reagent render function</strong></p><pre><code>(defn render [state]
+  (let [square (partial square state)]
+    [:div
+     [:div.status "Next player " (if (:x-is-next @state) "X" "O")]
+     [:div.board-row (doall (map square [0 1 2]))]
+     [:div.board-row (doall (map square [3 4 5]))]
+     [:div.board-row (doall (map square [6 7 8]))]
+     [:button {:on-click #(reset! state (vanilla-state))} "Reset game!"]]))
+</code></pre><h3 id="conclusion:_code_vs_data">Conclusion: Code vs Data</h3><p>Hopefully I managed to show you a few things that Reagent brings to the table:</p><ul><li>Concise and compact</li><li>Creating functional style components is super easy</li><li>Immutable data is the default</li></ul><p>But the thing that fundamentally separates it from React/JSX is the <strong>data focus</strong>.</p><ul><li>JSX creates instructions: <code>React.createElement('div')</code>.</li><li>Reagent creates data structures: <code>[:div]</code>.</li></ul><p>The former is opaque, hard to inspect at runtime. The latter is highly transparent, and easily inspectable in more than one way.</p><p>Your app is declared using nothing but pure data, using nothing but plain functions to manipulate the data. The very rich Clojure standard library with functions like <code>map</code>, <code>filter</code> and <code>reduce</code> at your disposal, without any funky new syntax to learn.</p>
+</div>
+
+<div id="post-tags">
+    <br/> 
+    <b>Tags: </b>
+    
+    <a href="/tags/jsx/">jsx</a>
+    
+    <a href="/tags/reagent/">reagent</a>
+    
+    <a href="/tags/react/">react</a>
+    
+    <a href="/tags/clojurescript/">clojurescript</a>
+    
+</div>
+
+<br/>
+
+    <div id="prev-next">
+        
+        <a class="button" href="/posts/2017-06-29-re-frame-side-effects-as-data/">&laquo; Re-frame: side effects as data</a>
+        
+        
+        <a class="right button" href="/posts/2017-01-01-how-to-use-a-charting-library-in-reagent/">How to use a charting library in Reagent &raquo;</a>
+        
+    </div>
+
+    
+
+
+</div>
+
+<hr/>
+<div id="footercont" class="clearfix">Copyright &copy; 2017 Inge Solvoll
+    <p>Powered by <a href="http://cryogenweb.org">Cryogen</a> | Free Website Template by <a title="free website templates" href="http://www.downloadwebsitetemplates.co.uk" rel="external">Download Website Templates</a></p>
+
+</div>
+</div>
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="/js/highlight.pack.js" type="text/javascript"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script src="/js/scripts.js" type="text/javascript"></script>
+ <link rel="stylesheet" type="text/css" href="https://storage.googleapis.com/app.klipse.tech/css/codemirror.css">
+<script>
+window.klipse_settings = {
+  "selector" : ".klipse-cljs",
+  "selector_reagent" : ".klipse-reagent"
+};
+</script>
+<script src="https://storage.googleapis.com/app.klipse.tech/plugin_prod/js/klipse_plugin.min.js"></script> 
+
+</body>
+</html>

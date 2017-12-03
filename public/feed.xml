@@ -1,0 +1,384 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<rss version='2.0' xmlns:atom='http://www.w3.org/2005/Atom'>
+<channel>
+<atom:link href='http://ingesolvoll.github.io/' rel='self' type='application/rss+xml'/>
+<title>
+Inge Solvoll's Blog
+</title>
+<link>
+http://ingesolvoll.github.io/
+</link>
+<description>
+This blog is awesome
+</description>
+<lastBuildDate>
+Sun, 03 Dec 2017 22:58:07 +0100
+</lastBuildDate>
+<generator>
+clj-rss
+</generator>
+<item>
+<guid>
+http://ingesolvoll.github.io/posts/2017-06-29-re-frame-side-effects-as-data/
+</guid>
+<link>
+http://ingesolvoll.github.io/posts/2017-06-29-re-frame-side-effects-as-data/
+</link>
+<title>
+Re-frame: side effects as data
+</title>
+<description>
+&lt;p&gt;Re-frame has a simple but powerful architecture that enables you to express yourself in pure data structures even with side-effect heavy code. In this post I will show a simple example of the patterns used.&lt;/p&gt;&lt;h3 id=&quot;re-frame&quot;&gt;Re-frame&lt;/h3&gt;&lt;p&gt;I'm going to assume that you have some basic knowledge about [Re-frame], the very popular lightweight application framework for [Reagent] applications. The architecture is very similar to React Redux, in that you have &lt;em&gt;event handlers / reducers&lt;/em&gt; that take the current version of your state as an argument and returns a transformed version of the state.&lt;/p&gt;&lt;h3 id=&quot;data_first&quot;&gt;Data first&lt;/h3&gt;&lt;p&gt;Clojure is all about data. It has a huge standard library that allows you to manipulate your immutable data structures in every possible way. This is a great tool for reducers when doing their data crunching.&lt;/p&gt;&lt;h3 id=&quot;how_about_those_nasty_side_effects?&quot;&gt;How about those nasty side effects?&lt;/h3&gt;&lt;p&gt;Any serious app needs to do HTTP, navigation, cookies, local storage, and other kinds of effects that are not about manipulating some data structure. It turns out that the re-frame developers did some very serious thinking about this. They came up with the concept of &lt;em&gt;pluggable effects&lt;/em&gt;. Instead of executing functions you will return data that tells some other party how to get the job done.&lt;/p&gt;&lt;p&gt;Rather than trying to explain this in words, I will use the amazing KLIPSE plugin to let you play around with these concepts yourself! Feel free to edit the code below to see what happens.&lt;/p&gt;&lt;h3 id=&quot;boot_it_up!&quot;&gt;Boot it up!&lt;/h3&gt; First, we need to require re-frame, and transitively reagent, into this page&lt;pre&gt;&lt;code class=&quot;klipse-cljs nohighlight&quot;&gt;(require '[re-frame.core :as re-frame])
+&lt;/code&gt;&lt;/pre&gt;&lt;h4 id=&quot;introducing_events&quot;&gt;Introducing events&lt;/h4&gt;&lt;p&gt;This is a typical re-frame event handler. We use &lt;code&gt;reg-event-fx&lt;/code&gt; to get access to both incoming and outgoing side effects.&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;klipse-cljs nohighlight&quot;&gt;
+(re-frame/reg-event-fx
+:show-message
+    (fn [incoming-effects [event-key message]]
+        (js/alert (str &quot;I was DIRECTLY asked to print this: &quot; message))))
+nil
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;As you can see, the handler shows the provided message in a native javascript &lt;code&gt;alert&lt;/code&gt; and returns nil (meaning nothing changed and there is nothing more that the framework needs to take care of). Click the button below to trigger the event and see the effect.&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;klipse-reagent nohighlight&quot;&gt;[:button
+    {:on-click (fn [e] (re-frame/dispatch [:show-message &quot;42&quot;]))}
+    &quot;Click me to alert something!&quot;]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;For many cases, this will be just fine. But in a more complex system with less visible side effects, you quickly lose track of where you are when debugging. One thing that really helps in these cases is a full and complete overview of the code paths, after the fact. If we execute our side effects inside the black boxes that functions are, we have no such overview.&lt;/p&gt;&lt;h3 id=&quot;effects_as_data&quot;&gt;Effects as data&lt;/h3&gt;&lt;p&gt;If we manage to express our side effects as data, this overview becomes trivial to make. To do this we need a couple of building blocks. First out are pluggable effects. You are free to create your own types of side effects, using re-frame's &lt;code&gt;reg-fx&lt;/code&gt; function.&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;klipse-cljs nohighlight&quot;&gt;(re-frame/reg-fx
+    :alert
+    (fn [message]
+        (js/alert (str &quot;I was INDIRECTLY asked to print this: &quot; message))))
+nil
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Nothing too fancy there. We are just introducing a level of indirection, letting the framework do the work of connecting our data to the actual effect.&lt;/p&gt;&lt;h3 id=&quot;logging&quot;&gt;Logging&lt;/h3&gt;&lt;p&gt;To get the full trace that we want, we need a way to inspect the return value of this handler after it executed.&lt;/p&gt;&lt;p&gt;Re-frame uses [interceptors] for cross-cutting concerns like this. The one below runs after the event handler. Through its &lt;code&gt;context&lt;/code&gt; parameter it has access to all metadata, including the return value of the handler. The &lt;code&gt;effects&lt;/code&gt; function gives us the handler return value.&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;klipse-cljs nohighlight&quot;&gt;
+(require '[re-frame.interceptor :refer [-&amp;gt;interceptor get-effect]])
+
+(def debug-interceptor
+  (-&amp;gt;interceptor
+    :id     :log-effects
+    :after  (fn [context]
+             (let [effects (get-effect context)
+                   event (re-frame/get-coeffect context :event)]
+               (if (seq effects)
+                 (js/alert (str &quot;Event &quot; event &quot; caused side effect &quot; effects)))
+               context))))
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Printing the event effect data to the console would probably be a much better idea, but since this is a demo inlined in a blog, we'll use an alert box.&lt;/p&gt;&lt;h3 id=&quot;a_&quot; pure95side95effecting95handler=&quot;pure95side95effecting95handler&quot;&gt;A &quot;pure&quot; side effecting handler&lt;/h3&gt;&lt;p&gt;Now we have what we need to be able to inspect or test our side effect. We inject our interceptor into the event handler when registering it.&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;klipse-cljs nohighlight&quot;&gt;(re-frame/reg-event-fx
+    :show-message-with-indirection
+    [debug-interceptor]
+    (fn [_ [_ message]] {:alert message}))
+nil
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;And finally, here's a snippet that uses our new handler. Click the button to observe the alert box with the event data, prior to the actual effect.&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;klipse-reagent nohighlight&quot;&gt;[:button
+    {:on-click (fn [e] (re-frame/dispatch [:show-message-with-indirection &quot;42&quot;]))}
+    &quot;Click me to alert something!&quot;]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The difference between &lt;code&gt;(js/alert message)&lt;/code&gt; and &lt;code&gt;{:alert message}&lt;/code&gt; might seem insignificant. But having the trace of data at your fingertips makes a world of a difference when you're stuck trying to figure out why your chain of HTTP requests  has stalled. Unit testing also becomes trivial, as opposed to sniffing the presence of an alert box.&lt;/p&gt;&lt;h3 id=&quot;event_ping_pong&quot;&gt;Event ping pong&lt;/h3&gt;&lt;p&gt;I'm not super happy about the callback style of re-frame. Every time you need to do something asynchronous like HTTP, you need to name the event handler that should receive the callback. It very quickly turns into something that could be called  &quot;event ping pong&quot; or even &quot;callback hell&quot;. [keechma] is a very interesting alternative framework, the [pipelines] are particluarly interesting.  But keechma does not have the same focus on effects as data.&lt;/p&gt;&lt;p&gt;I would love to see something like the keechma pipelines for re-frame, and I'm experimenting to see if I can find a nice and practical solution.&lt;/p&gt;&lt;p&gt;If you find this subject interesting hit me up on [reddit] or [twitter]!&lt;/p&gt;
+</description>
+<pubDate>
+Thu, 29 Jun 2017 00:00:00 +0200
+</pubDate>
+</item>
+<item>
+<guid>
+http://ingesolvoll.github.io/posts/2017-06-22-plain-react-vs-reagent/
+</guid>
+<link>
+http://ingesolvoll.github.io/posts/2017-06-22-plain-react-vs-reagent/
+</link>
+<title>
+JSX vs Clojurescript: the showdown
+</title>
+<description>
+&lt;blockquote&gt;&lt;p&gt; &amp;gt; What's the point in using ClojureScript with Om/Reagent/Rum/Quiescent instead of plain ReactJS? Is it better or is it just different? &lt;/p&gt;&lt;/blockquote&gt;&lt;p&gt;This excellent question was asked on [reddit] some time ago. Many commented, most of them seem to not have read the question. I would like to try to answer it in this post. It will be superficial, but hopefully entertaining and informative!&lt;/p&gt;&lt;p&gt;We'll be comparing ReactJS/JSX (JavaScript) with [Reagent] (ClojureScript ReactJS wrapper). I'll use the official ReactJS [tutorial] as my example, exploring the differences.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;I've tried to keep the code as equal as possible between the languages.&lt;/strong&gt;&lt;br /&gt;&lt;/p&gt;&lt;h3 id=&quot;1._a_trivial_component&quot;&gt;1. A trivial component&lt;/h3&gt;&lt;p&gt;The app we're making is a Tic-tac-toe game. The most basic building block for this game will be the &lt;code&gt;square&lt;/code&gt; component, representing one clickable square on the board.&lt;/p&gt;&lt;p&gt;&lt;strong&gt;JSX&lt;/strong&gt;&lt;/p&gt;&lt;pre&gt;&lt;code&gt;const Square = (props) =&amp;gt;
+&amp;lt;button className=&quot;square&quot; onClick={props.onClick}&amp;gt;
+  {props.value}
+&amp;lt;/button&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;Reagent&lt;/strong&gt;&lt;/p&gt;&lt;pre&gt;&lt;code&gt;(defn square [value on-click]
+  [:button.square {:on-click on-click}
+   value])
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Clojure is without doubt a more concise language than JS. It also has a very neat standard for representing markup, called &lt;strong&gt;Hiccup&lt;/strong&gt;. Here's the complete Hiccup syntax guide:&lt;/p&gt;&lt;p&gt;&lt;code&gt;[:tagname#elementId.cssClassName {:some &quot;attribute&quot;} child-content-here]&lt;/code&gt;&lt;/p&gt;&lt;p&gt;What you see is immutable Clojure data structures. Your markup is literally data that will be converted to React components later on. But right now it's data, which is &lt;strong&gt;a much bigger deal than you might think.&lt;/strong&gt;&lt;/p&gt;&lt;p&gt;In the opposite corner our React square has some proprietary properties:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;A custom way of conveying component parameters (&lt;code&gt;props&lt;/code&gt;)&lt;/li&gt;&lt;li&gt;Renames the CSS property &lt;code&gt;class&lt;/code&gt; to &lt;code&gt;className&lt;/code&gt;&lt;/li&gt;&lt;li&gt;Special syntax &lt;code&gt;&amp;lt;div&amp;gt;{props.theMessage}&amp;lt;/div&amp;gt;&lt;/code&gt; for putting dynamic content in markup&lt;/li&gt;&lt;li&gt;Embedding HTML-like markup inside JS (JSX)&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;Some people love JSX, others don't. The code formatter on this blog clearly doesn't. I won't get into that discussion, there's a more interesting point to make: &lt;strong&gt;JSX produces function calls, Reagent produces data&lt;/strong&gt;. More on that later.&lt;/p&gt;&lt;h3 id=&quot;2._event_listeners_and_state&quot;&gt;2. Event listeners and state&lt;/h3&gt;&lt;p&gt;When you click on a square, our handler is called. I modified the official example slightly, putting the side effect free code in a [pure function].&lt;/p&gt;&lt;p&gt;&lt;strong&gt;Javascript&lt;/strong&gt;&lt;/p&gt;&lt;pre&gt;&lt;code&gt;function makeMove(state, i) {
+  if (state.squares[i]) {
+    return state;
+  }
+  else {
+    const squares = state.squares.slice();
+    squares[i] = state.xIsNext ? 'X' : 'O';
+    return {squares: squares,
+            xIsNext: !this.state.xIsNext}
+  }
+}
+
+handleClick(i) {
+  this.setState(makeMove(this.state, i));
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;Clojurescript&lt;/strong&gt;&lt;/p&gt;&lt;pre&gt;&lt;code&gt;
+(defn make-move [state i]
+  (if (-&amp;gt; state :squares (get i))
+    state
+    (-&amp;gt; state
+      (assoc-in [:squares i] (if (:x-is-next state) &quot;X&quot; &quot;O&quot;))
+      (update-in [:x-is-next] not))))
+
+(defn handle-click [i]
+  (swap! state make-move i))
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The Javascript code listed above is written with immutability in mind, because the React developers see the value of promoting that style. But functional programming in Javascript requires knowledge and discipline. Like applying the little &lt;code&gt;slice()&lt;/code&gt; copy trick in &lt;code&gt;makeMove&lt;/code&gt;.&lt;/p&gt;&lt;p&gt;In Clojure, immutability is the default. In my opinion that's the steepest learning curve of the language, not the syntax. &lt;strong&gt;If you spent your life mutating variables to get stuff done, programming without mutation is like eating soup with a fork.&lt;/strong&gt; But once you're in, you desperately don't want to go back.&lt;/p&gt;&lt;h3 id=&quot;3._the_big_render&quot;&gt;3. The big render&lt;/h3&gt;&lt;p&gt;The main render function connects the smaller parts into a whole. As you can see below, most of the differences have already been covered. Please review for yourself the pros and cons of each approach:&lt;/p&gt;&lt;p&gt;&lt;strong&gt;JSX render function&lt;/strong&gt;&lt;/p&gt;&lt;pre&gt;&lt;code&gt;render() {
+    let status = &quot;Next player: ${this.state.xIsNext ? 'X' : 'O'}&quot;;
+    return (
+      &amp;lt;div&amp;gt;
+        &amp;lt;div className=&quot;status&quot;&amp;gt;{status}&amp;lt;/div&amp;gt;
+        &amp;lt;div className=&quot;board-row&quot;&amp;gt; {[0,1,2].map ((i) =&amp;gt; this.renderSquare(i))}  &amp;lt;/div&amp;gt;
+        &amp;lt;div className=&quot;board-row&quot;&amp;gt; {[3,4,5].map ((i) =&amp;gt; this.renderSquare(i))}  &amp;lt;/div&amp;gt;
+        &amp;lt;div className=&quot;board-row&quot;&amp;gt; {[6,7,8].map ((i) =&amp;gt; this.renderSquare(i))}  &amp;lt;/div&amp;gt;
+        &amp;lt;button onClick= {() =&amp;gt; this.reset()}&amp;gt; Reset &amp;lt;/button&amp;gt;
+      &amp;lt;/div&amp;gt;
+    );
+  }
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;&lt;strong&gt;Reagent render function&lt;/strong&gt;&lt;/p&gt;&lt;pre&gt;&lt;code&gt;(defn render [state]
+  (let [square (partial square state)]
+    [:div
+     [:div.status &quot;Next player &quot; (if (:x-is-next @state) &quot;X&quot; &quot;O&quot;)]
+     [:div.board-row (doall (map square [0 1 2]))]
+     [:div.board-row (doall (map square [3 4 5]))]
+     [:div.board-row (doall (map square [6 7 8]))]
+     [:button {:on-click #(reset! state (vanilla-state))} &quot;Reset game!&quot;]]))
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&quot;conclusion:_code_vs_data&quot;&gt;Conclusion: Code vs Data&lt;/h3&gt;&lt;p&gt;Hopefully I managed to show you a few things that Reagent brings to the table:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Concise and compact&lt;/li&gt;&lt;li&gt;Creating functional style components is super easy&lt;/li&gt;&lt;li&gt;Immutable data is the default&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;But the thing that fundamentally separates it from React/JSX is the &lt;strong&gt;data focus&lt;/strong&gt;.&lt;/p&gt;&lt;ul&gt;&lt;li&gt;JSX creates instructions: &lt;code&gt;React.createElement('div')&lt;/code&gt;.&lt;/li&gt;&lt;li&gt;Reagent creates data structures: &lt;code&gt;[:div]&lt;/code&gt;.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;The former is opaque, hard to inspect at runtime. The latter is highly transparent, and easily inspectable in more than one way.&lt;/p&gt;&lt;p&gt;Your app is declared using nothing but pure data, using nothing but plain functions to manipulate the data. The very rich Clojure standard library with functions like &lt;code&gt;map&lt;/code&gt;, &lt;code&gt;filter&lt;/code&gt; and &lt;code&gt;reduce&lt;/code&gt; at your disposal, without any funky new syntax to learn.&lt;/p&gt;
+</description>
+<pubDate>
+Thu, 22 Jun 2017 00:00:00 +0200
+</pubDate>
+</item>
+<item>
+<guid>
+http://ingesolvoll.github.io/posts/2017-01-01-how-to-use-a-charting-library-in-reagent/
+</guid>
+<link>
+http://ingesolvoll.github.io/posts/2017-01-01-how-to-use-a-charting-library-in-reagent/
+</link>
+<title>
+How to use a charting library in Reagent
+</title>
+<description>
+&lt;h3 id=&quot;charting_in_javascript&quot;&gt;Charting in javascript&lt;/h3&gt;&lt;p&gt;There are several high quality charting libraries made for the browser. I chose Highcharts for this demo. Highcharts is an excellent commercial charting library with both great looking charts and simple configuration. I'm going to use this [example] as a basis for this demonstration.&lt;/p&gt;&lt;h3 id=&quot;this_web_page_is_interactive&quot;&gt;This web page is interactive&lt;/h3&gt;&lt;p&gt;I will be using the amazing [KLIPSE] plugin in this blog post. It turns all the code samples into live code that you can edit and experiment with.&lt;/p&gt;&lt;p&gt;First, we need to load Reagent, React and highcharts into the page. This should take about 5-10 seconds. After that, it will show the result &lt;code&gt;nil&lt;/code&gt;, as expected for the &lt;code&gt;require&lt;/code&gt; statement&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;klipse-cljs nohighlight&quot;&gt;(require '[reagent.core :as r])
+(require '[cljsjs.highcharts])
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The config for our chart will reside in a reagent &lt;code&gt;atom&lt;/code&gt;, allowing us to live-configure the chart later on.&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;klipse-cljs nohighlight&quot;&gt;(def config-atom (r/atom nil))
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Now we make the reagent component that will render our chart. We hook on to the React lifecycle event &lt;code&gt;component-did-mount&lt;/code&gt; to render the chart when our component has been added to the DOM. We also include &lt;code&gt;component-did-update&lt;/code&gt; to re-render the chart on your config changes.&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;klipse-cljs nohighlight&quot;&gt;
+(defn render-chart-fn [config-atom]
+  (fn [component]
+    (.chart js/Highcharts (r/dom-node component) (clj-&amp;gt;js @config-atom))))
+
+(defn chart-ui [config-atom]
+  (r/create-class
+    {:component-did-mount (render-chart-fn config-atom)
+      :component-did-update (render-chart-fn config-atom)
+      :reagent-render (fn [config-atom]
+        @config-atom ;; Dirty hack, so reagent will re-render this component when config changes
+        [:div])}))
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;One major gotcha here is the &lt;code&gt;clj-&amp;gt;js&lt;/code&gt; part. Without it, you will be sending Clojurescript data structures to Highcharts, with weird error messages and painful meaningless debugging as a result. Observe the difference below&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;klipse-cljs nohighlight&quot;&gt;(type {:this :is
+  :not :javascript})
+&lt;/code&gt;&lt;/pre&gt;&lt;pre&gt;&lt;code class=&quot;klipse-cljs nohighlight&quot;&gt;(type (clj-&amp;gt;js {:this :however
+  :is :javascript}))
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Let's make a basic config for our chart and put it in the atom&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;klipse-cljs nohighlight&quot;&gt;(def default-config
+  {:chart {:type :bar}
+  :title {:text &quot;Chart title here&quot;}
+  :xAxis {:categories [&quot;Apples&quot;, &quot;Bananas&quot;, &quot;Oranges&quot;]}
+  :yAxis {:title {:text &quot;Fruit eaten&quot;}}
+  :series [{:name &quot;Jane&quot; :data [1, 0, 4]}
+          {:name &quot;John&quot; :data [5, 7, 3]}]})
+
+(reset! config-atom default-config)
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The end result is rendered below.&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;klipse-reagent nohighlight&quot;&gt;[chart-ui config-atom]
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You should try to edit the configuration. The chart will re-render immediately when you make changes. Try things like:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Change the title&lt;/li&gt;&lt;li&gt;Change the category names&lt;/li&gt;&lt;li&gt;Change chart type from &lt;code&gt;:bar&lt;/code&gt; to &lt;code&gt;:line&lt;/code&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;As you can see, integrating any library in Reagent is fairly simple and concise. There are some pitfalls, some important ones have been covered here. The most significant one is the use of [externs] when you build your app with advanced optimizations. If you use [cljsjs], that won't be an issue. Chart libraries like highcharts, C3, D3 are on cljsjs.&lt;/p&gt;
+</description>
+<pubDate>
+Sun, 01 Jan 2017 00:00:00 +0100
+</pubDate>
+</item>
+<item>
+<guid>
+http://ingesolvoll.github.io/posts/2016-12-26-how-boot-solved-our-ftp-upload-problem/
+</guid>
+<link>
+http://ingesolvoll.github.io/posts/2016-12-26-how-boot-solved-our-ftp-upload-problem/
+</link>
+<title>
+How boot solved our FTP problem
+</title>
+<description>
+&lt;h3 id=&quot;limitations&amp;#95;of&amp;#95;maven&quot;&gt;Limitations of Maven&lt;/h3&gt;&lt;p&gt;My company uses Maven and Jenkins for most of our build needs. We are pretty happy with the setup, it gets the job done. Except for the couple of builds that need to do an FTP upload.&lt;/p&gt;&lt;p&gt;The Wagon plugin with FTP extension seems to be your best bet for doing this in Maven. This is our setup:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;&amp;lt;plugin&amp;gt;
+    &amp;lt;groupId&amp;gt;org.codehaus.mojo&amp;lt;/groupId&amp;gt;
+    &amp;lt;artifactId&amp;gt;wagon-maven-plugin&amp;lt;/artifactId&amp;gt;
+    &amp;lt;version&amp;gt;1.0&amp;lt;/version&amp;gt;
+    &amp;lt;executions&amp;gt;
+        &amp;lt;execution&amp;gt;
+            &amp;lt;id&amp;gt;ftp-deploy&amp;lt;/id&amp;gt;
+            &amp;lt;phase&amp;gt;install&amp;lt;/phase&amp;gt;
+            &amp;lt;goals&amp;gt;
+                &amp;lt;goal&amp;gt;upload-single&amp;lt;/goal&amp;gt;
+            &amp;lt;/goals&amp;gt;
+            &amp;lt;configuration&amp;gt;
+                &amp;lt;serverId&amp;gt;server-id-on-jenkins&amp;lt;/serverId&amp;gt;
+                &amp;lt;url&amp;gt;ftp://myserver.com&amp;lt;/url&amp;gt;
+                &amp;lt;fromFile&amp;gt;${project.build.directory}/${project.build.finalName}.war&amp;lt;/fromFile&amp;gt;
+                &amp;lt;toFile&amp;gt;path/on/server/something.war&amp;lt;/toFile&amp;gt;
+            &amp;lt;/configuration&amp;gt;
+        &amp;lt;/execution&amp;gt;
+    &amp;lt;/executions&amp;gt;
+&amp;lt;/plugin&amp;gt;
+
+&amp;lt;extensions&amp;gt;
+    &amp;lt;extension&amp;gt;
+        &amp;lt;groupId&amp;gt;org.apache.maven.wagon&amp;lt;/groupId&amp;gt;
+        &amp;lt;artifactId&amp;gt;wagon-ftp&amp;lt;/artifactId&amp;gt;
+        &amp;lt;version&amp;gt;2.10&amp;lt;/version&amp;gt;
+    &amp;lt;/extension&amp;gt;
+&amp;lt;/extensions&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;We would have been ok with this amount of XML bloat if it all worked. But it doesn't. Our 50MB artifact upload takes &lt;b&gt;5-10 minutes&lt;/b&gt;. With desktop FTP software it takes 8 seconds, so clearly this can be improved. Unfortunately, the configuration options for Wagon FTP are nowhere to be found.&lt;/p&gt;&lt;h3 id=&quot;why&amp;#95;so&amp;#95;slow?&quot;&gt;Why so slow?&lt;/h3&gt;&lt;p&gt;It took me less than 2 minutes to find the solution on [stackoverflow]. It turns out that FTP upload is extremely inefficient when using default buffer size. A buffer size of 1MB does the trick.&lt;/p&gt;&lt;p&gt;So what to do then, when Wagon has no options? I considered rolling my own Maven plugin for this, but life is too short for that.&lt;/p&gt;&lt;h3 id=&quot;boot&amp;#95;to&amp;#95;the&amp;#95;rescue&quot;&gt;Boot to the rescue&lt;/h3&gt;&lt;p&gt;[Boot] is a relatively young build tool in a Clojure world dominated by Leiningen. It has a rather fresh approach by being less declarative and more script-centric than Maven and Leiningen.&lt;/p&gt;&lt;p&gt;With boot you just pull in the plain java/clojure libraries you need. No special plugins or xml/json. You organize your code as tasks that operate on an immutable file system abstraction. Now I'm free to use Apache Commons Net directly to get the job done, but I'd much rather use an idiomatic clojure wrapper. Turns out there are several of those, one of them is [clj-ftp]. Quite a nice API, this should cover most use cases:&lt;/p&gt;&lt;pre&gt;&lt;code&gt; &amp;#40;with-ftp &amp;#91;client &amp;quot;ftp://myserver.com&amp;quot;&amp;#93;
+        &amp;#40;.setBufferSize client 1024000&amp;#41;
+        &amp;#40;client-put client local-file-path remote-path&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Making it available in my boot file is as simple as:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;&amp;#40;set-env!
+  :dependencies '&amp;#91;&amp;#91;com.velisco/clj-ftp &amp;quot;0.3.8&amp;quot;&amp;#93;&amp;#93;&amp;#41;
+
+&amp;#40;require '&amp;#91;miner.ftp :refer &amp;#91;with-ftp client-put&amp;#93;&amp;#93;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;As in all other code environments, it is good practice to make as much as possible of the code pure and decoupled from the framework. Since boot is just clojure code, this is easy:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;&amp;#40;defn find-war &amp;#91;fileset&amp;#93;
+  &amp;#40;let &amp;#91;{:keys &amp;#91;dir path&amp;#93;} &amp;#40;-&amp;gt;&amp;gt; fileset
+                                output-files
+                                &amp;#40;by-ext &amp;#91;&amp;quot;.war&amp;quot;&amp;#93;&amp;#41;
+                                first&amp;#41;&amp;#93;
+         &amp;#40;str &amp;#40;.toString dir&amp;#41; &amp;quot;\\&amp;quot; path&amp;#41;&amp;#41;&amp;#41;
+
+&amp;#40;defn ftp-upload! &amp;#91;url local-path remote-path&amp;#93;
+  &amp;#40;with-ftp &amp;#91;client url&amp;#93;
+            &amp;#40;.setBufferSize client 1024000&amp;#41;
+            &amp;#40;client-put client local-path remote-path&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Finally, we need to connect our code to boot tasks, so they can be executed by Jenkins. The boot way is through the &lt;code&gt;deftask&lt;/code&gt; macro. Boot has lots of built in tasks, like &lt;code&gt;jar&lt;/code&gt; and &lt;code&gt;compile&lt;/code&gt;, and our newly created upload task fits nicely in a chain with the built-in ones.&lt;/p&gt;&lt;pre&gt;&lt;code&gt;&amp;#40;deftask upload &amp;#91;&amp;#93;
+   &amp;#40;with-pass-thru fileset
+     &amp;#40;ftp-upload! &amp;quot;ftp://myserver.com&amp;quot; &amp;#40;find-war fileset&amp;#41; &amp;quot;path/on/server/something.war&amp;quot;&amp;#41;&amp;#41;&amp;#41;&amp;#41;
+
+&amp;#40;deftask build
+  &amp;#40;comp &amp;#40;compile&amp;#41; &amp;#40;jar&amp;#41; &amp;#40;uber&amp;#41; &amp;#40;war&amp;#41; &amp;#40;upload&amp;#41;&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;h3 id=&quot;full&amp;#95;code&amp;#95;listing&quot;&gt;Full code listing&lt;/h3&gt;&lt;p&gt;The full boot build file is listed below. I'm completely new to boot, so I probably made tons of mistakes. But I think this is as compact, powerful and readable as it gets for integrating an arbitrary Java/Clojure library into your build!&lt;/p&gt;&lt;pre&gt;&lt;code&gt;&amp;#40;set-env!
+  :dependencies '&amp;#91;&amp;#91;com.velisco/clj-ftp &amp;quot;0.3.8&amp;quot;&amp;#93;&amp;#93;&amp;#41;
+
+&amp;#40;require '&amp;#91;miner.ftp :refer &amp;#91;with-ftp client-put&amp;#93;&amp;#93;&amp;#41;
+
+&amp;#40;defn find-war &amp;#91;fileset&amp;#93;
+  &amp;#40;let &amp;#91;{:keys &amp;#91;dir path&amp;#93;} &amp;#40;-&amp;gt;&amp;gt; fileset
+                                output-files
+                                &amp;#40;by-ext &amp;#91;&amp;quot;.war&amp;quot;&amp;#93;&amp;#41;
+                                first&amp;#41;&amp;#93;
+         &amp;#40;str &amp;#40;.toString dir&amp;#41; &amp;quot;\\&amp;quot; path&amp;#41;&amp;#41;&amp;#41;
+
+&amp;#40;defn ftp-upload! &amp;#91;url local-path remote-path&amp;#93;
+  &amp;#40;with-ftp &amp;#91;client url
+              :file-type :binary&amp;#93;
+            &amp;#40;.setBufferSize client 1024000&amp;#41;
+            &amp;#40;client-put client local-path remote-path&amp;#41;&amp;#41;
+
+&amp;#40;deftask upload &amp;#91;&amp;#93;
+   &amp;#40;with-pass-thru fileset
+     &amp;#40;ftp-upload! &amp;quot;ftp://myserver.com&amp;quot; &amp;#40;find-war fileset&amp;#41; &amp;quot;path/on/server/something.war&amp;quot;&amp;#41;&amp;#41;&amp;#41;&amp;#41;
+
+&amp;#40;deftask build &amp;#91;&amp;#93;
+  &amp;#40;comp &amp;#40;compile&amp;#41; &amp;#40;jar&amp;#41; &amp;#40;uber&amp;#41; &amp;#40;war&amp;#41; &amp;#40;upload&amp;#41;&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;hey&lt;/p&gt;
+</description>
+<pubDate>
+Mon, 26 Dec 2016 00:00:00 +0100
+</pubDate>
+</item>
+<item>
+<guid>
+http://ingesolvoll.github.io/posts/2016-03-26-railway-oriented-programming-with-clojurescript/
+</guid>
+<link>
+http://ingesolvoll.github.io/posts/2016-03-26-railway-oriented-programming-with-clojurescript/
+</link>
+<title>
+Railway oriented programming with Clojurescript
+</title>
+<description>
+&lt;h3 id=&quot;the&amp;#95;problem&quot;&gt;The problem&lt;/h3&gt;&lt;p&gt;If you ever made a non-trivial single page application (SPA) in the browser, you probably ran into some of the same problems as me, namely:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Functions doing HTTP requests with callbacks aren't easily composable (among other things)&lt;/li&gt;&lt;li&gt;Taking error handling seriously pollutes your beautiful happy path code&lt;/li&gt;&lt;/ul&gt;&lt;h3 id=&quot;javascript&amp;#95;current&amp;#95;day&quot;&gt;JavaScript current day&lt;/h3&gt;&lt;p&gt;So let's have a look at a typical JavaScript controller that retrieves data from the server:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;function loadCustomer&amp;#40;username&amp;#41; {
+  $.get&amp;#40;'mysite/customer/byusername/' + username&amp;#41;.then&amp;#40;function&amp;#40;customer&amp;#41; {
+    $.get&amp;#40;'mysite/customer/' + customer.id + '/order'&amp;#41;.then&amp;#40;function&amp;#40;orders&amp;#41; {
+        populateCustomerDashboard&amp;#40;customer, orders&amp;#41;;
+    }&amp;#41;;
+  }&amp;#41;;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;You could get quite far with this approach. But it gets messy once you would like to reuse this code chunk but with something else happening in the end, or maybe put the whole thing in a loop after retrieving a bunch of usernames from a server. Using callbacks forces us to explicitly wire things together, making composability very hard.&lt;/p&gt;&lt;p&gt;And we did not even get started on the error handling. Here's the same code, with error callbacks:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;function loadCustomer&amp;#40;username&amp;#41; {
+  $.get&amp;#40;'mysite/customer/byusername/' + username&amp;#41;.then&amp;#40;function&amp;#40;customer&amp;#41; {
+    $.get&amp;#40;'mysite/customer/' + customer.id + '/order'&amp;#41;.then&amp;#40;function&amp;#40;orders&amp;#41; {
+        populateCustomerDashboard&amp;#40;customer, orders&amp;#41;;
+    }&amp;#41;.error&amp;#40;function&amp;#40;error&amp;#41; {
+          // Some proper error handling here
+        }&amp;#41;;
+  }&amp;#41;.error&amp;#40;function&amp;#40;error&amp;#41; {
+    // Some proper error handling here
+  }&amp;#41;;
+}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Quite quickly, our quite simple logic is buried in deep nesting, duplication and noise. Seeing this, I started looking for solutions that would allow me to:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Write my asynchronous logic in a clean and linear way, without nesting and callbacks&lt;/li&gt;&lt;li&gt;Apply robust error handling transparently&lt;/li&gt;&lt;li&gt;Leverage host language's built in features, avoiding custom made constructs&lt;/li&gt;&lt;/ul&gt;&lt;h3 id=&quot;clojurescript&amp;#95;and&amp;#95;core.async&amp;#95;to&amp;#95;the&amp;#95;rescue&quot;&gt;Clojurescript and core.async to the rescue&lt;/h3&gt;&lt;p&gt;Clojure has the brilliant &lt;a href='https://github.com/clojure/core.async'&gt;core.async library&lt;/a&gt; that gives us a completely different way of working with time in code. It uses channels for delivering messages between parts of your program. The rest of this post will require some basic understanding of core.async, &lt;a href='http://www.braveclojure.com/core-async/'&gt;I recommend this nice and friendly introduction!&lt;/a&gt;&lt;/p&gt;&lt;p&gt;We also need a library for doing HTTP. The [cljs-http] library leans heavily on core.async. It delivers HTTP responses on channels instead of using callbacks, and is just what we need.&lt;/p&gt;&lt;h3 id=&quot;tuning&amp;#95;in&amp;#95;on&amp;#95;channels&quot;&gt;Tuning in on channels&lt;/h3&gt;&lt;p&gt;With cljs-http and core.async, the examples above become:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;&amp;#40;defn load-customer &amp;#91;username&amp;#93;
+  &amp;#40;go
+    &amp;#40;let &amp;#91;customer &amp;#40;:body &amp;#40;&amp;lt;! &amp;#40;http/get &amp;#40;str &amp;quot;mysite/customer/byusername/&amp;quot; username&amp;#41;&amp;#41;&amp;#41;&amp;#41;
+          orders &amp;#40;:body &amp;#40;&amp;lt;! &amp;#40;http/get &amp;#40;str &amp;quot;mysite/customer/&amp;quot; &amp;#40;:id customer&amp;#41; &amp;quot;/orders&amp;quot;&amp;#41;&amp;#41;&amp;#41;&amp;#41;&amp;#93;
+      &amp;#40;populate-customer-dashboard customer orders&amp;#41;&amp;#41;&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Using core.async's &lt;code&gt;go&lt;/code&gt;-blocks, we can write our HTTP-requests as a regular procedural code without callbacks, and have all responses available as variables in a flattened scope.  Using &lt;code&gt;&amp;lt;!&lt;/code&gt; inside a &lt;code&gt;go&lt;/code&gt;-block, the library will &quot;park&quot; your program and continue with the next line after a value becomes available. Kind of like a breakpoint in your debugger.  The &lt;code&gt;go&lt;/code&gt;-block itself returns a channel, which will eventually contain the customer dashboard HTML.&lt;/p&gt;&lt;p&gt;This code still has major issues though.&lt;/p&gt;&lt;p&gt;First of all, a go block returns a channel, so the caller of this function needs to take from that channel to get our customer dashboard.  This is ok to some extent, but it's a bit clunky to use channels all over the place.  Ideally we would like to have our core logic as pure functions, and use channels to transparently connect them.&lt;/p&gt;&lt;p&gt;Also, the code has the same problem with error handling. Currently there isn't any, and it would be implemented in much the same way as the JavaScript version, with boring and noisy if-checks after receiving responses.  And if an error actually occurs, propagating it through your functions will hurt your nice APIs.&lt;/p&gt;&lt;h3 id=&quot;railway-oriented&amp;#95;programming&quot;&gt;Railway-oriented programming&lt;/h3&gt;&lt;p&gt;&lt;a href='https://fsharpforfunandprofit.com/rop/'&gt;This is excellent talk&lt;/a&gt; by &lt;a href='https://twitter.com/scottwlaschin'&gt;Scott Wlaschin&lt;/a&gt; introduces the term Railway oriented programming, using F#.  It's basically a way of talking about monads that makes it understandable to most people. The idea is to take a pure function with regular inputs and outputs, and wrap it in a function that can accept and return either success or failure. If a failure is received, we return the failure value. On success, we call our regular wrapped function. This way, an error will shut down the whole chain of functions as they will all just pass through the same error return.  &lt;/p&gt;&lt;p&gt;You should head over to Scott's site and spend some minutes reading or watching the talk to get a much better understanding of the concept than you will ever get from me. &lt;/p&gt;&lt;h3 id=&quot;channel&amp;#95;oriented&amp;#95;programming&quot;&gt;Channel oriented programming&lt;/h3&gt;&lt;p&gt;I'm not too strong on monads and things, but I &lt;em&gt;think&lt;/em&gt; I understand the main point: &lt;strong&gt;A monad is a box with something in it that can be unboxed or mapped over&lt;/strong&gt;. That sounds like core.async channels to me, so I'll give it a try. &lt;/p&gt;&lt;p&gt;Usually when you make a functional chain that transforms data, you pass the output of one function into the next.  I found that when working at the abstraction level of HTTP calls and application state, it's hard to compose functions in the same way.  Quite often you need to pass things like primary keys several steps down the chain.&lt;/p&gt;&lt;p&gt;My way of solving this is to use &lt;a href='http://clojure-doc.org/articles/cookbooks/middleware.html'&gt;middleware style&lt;/a&gt;.  Each function receives accumulated upstream results as a map, and adds its own result entry to the map before passing it downstream.&lt;/p&gt;&lt;h3 id=&quot;channel&amp;#95;wrapper&amp;#95;functions&quot;&gt;Channel wrapper functions&lt;/h3&gt;&lt;p&gt;&lt;code&gt;=fn=&lt;/code&gt; and &lt;code&gt;=http=&lt;/code&gt; are my wrapper functions so far. I chose names padded with &lt;code&gt;=&lt;/code&gt;, to indicate 2 tracks in and out. Let's have a look at the simplest one first:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;&amp;#40;defn fn-&amp;gt;rail &amp;#91;ctx key f&amp;#93;
+  &amp;#40;try
+    {:success &amp;#40;assoc ctx key &amp;#40;f ctx&amp;#41;&amp;#41;}
+    &amp;#40;catch js/Object e
+      {:error {:type :general :msg e}}&amp;#41;&amp;#41;&amp;#41;
+
+&amp;#40;defn =fn= &amp;#91;input-chan key f&amp;#93;
+  &amp;#40;go
+    &amp;#40;let &amp;#91;{:keys &amp;#91;success error&amp;#93;} &amp;#40;&amp;lt;! input-chan&amp;#41;&amp;#93;
+      &amp;#40;if success
+        &amp;#40;fn-&amp;gt;rail success key f&amp;#41;
+        {:error error}&amp;#41;&amp;#41;&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;A wrapper always starts out by waiting for the the value of its input channel. If the value has a success key, we pass that value into our wrapped function. If we receive an error key, we short circuit and return the same error key. Upon success of the wrapped function, we &lt;code&gt;assoc&lt;/code&gt; the returned value into the shared result map.&lt;/p&gt;&lt;p&gt;And here's the special case for HTTP::&lt;/p&gt;&lt;pre&gt;&lt;code&gt;&amp;#40;defn response-&amp;gt;rail &amp;#91;ctx key {:keys &amp;#91;body success&amp;#93;}&amp;#93;
+  &amp;#40;if success
+    {:success &amp;#40;assoc ctx key body&amp;#41;}
+    {:error {:type :http :msg &amp;#40;:error body&amp;#41;}}&amp;#41;&amp;#41;
+
+&amp;#40;defn =http= &amp;#91;input-chan key f&amp;#93;
+  &amp;#40;go
+    &amp;#40;let &amp;#91;{:keys &amp;#91;success error&amp;#93;} &amp;#40;&amp;lt;! input-chan&amp;#41;&amp;#93;
+      &amp;#40;if success
+        &amp;#40;response-&amp;gt;rail success key &amp;#40;&amp;lt;! &amp;#40;f success&amp;#41;&amp;#41;&amp;#41;
+        {:error error}&amp;#41;&amp;#41;&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Not very different really, just needs to unwrap the data from the HTTP response before putting it on the channel.&lt;/p&gt;&lt;p&gt;Finally, here's the last piece of the puzzle: The &lt;code&gt;wrap-rail&lt;/code&gt; function.&lt;/p&gt;&lt;pre&gt;&lt;code&gt;&amp;#40;defn wrap-rail &amp;#91;f input error-handler&amp;#93;
+  &amp;#40;-&amp;gt; &amp;#40;go {:success input}&amp;#41;
+      f
+      error-handler&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;It doesn't do much, just puts the provided input map on a channel, passes it to the wrappped function chain and makes sure that the any errors are caught in the end.  &lt;/p&gt;&lt;h3 id=&quot;the&amp;#95;final&amp;#95;result&quot;&gt;The final result&lt;/h3&gt;&lt;pre&gt;&lt;code&gt;&amp;#40;defn populate-customer-dashboard &amp;#91;{:keys &amp;#91;customer orders&amp;#93;}&amp;#93;
+  ; Produce some nice HTML for customer dashboard
+  &amp;#41;
+
+&amp;#40;defn customer-info &amp;#91;{username :username}&amp;#93;
+  &amp;#40;http/get &amp;#40;str &amp;quot;mysite/customer/byusername/&amp;quot; username&amp;#41;&amp;#41;&amp;#41;
+
+&amp;#40;defn orders &amp;#91;{customer :customer}&amp;#93;
+  &amp;#40;http/get &amp;#40;str &amp;quot;mysite/customer/&amp;quot; &amp;#40;:id customer&amp;#41; &amp;quot;/orders&amp;quot;&amp;#41;&amp;#41;&amp;#41;
+
+&amp;#40;defn order-chain &amp;#91;input-channel&amp;#93;
+  &amp;#40;-&amp;gt; input-channel
+      &amp;#40;=http= :customer customer-info&amp;#41;
+      &amp;#40;=http= :orders orders&amp;#41;
+      &amp;#40;=fn= :dashboard populate-customer-dashboard&amp;#41;&amp;#41;&amp;#41;
+      
+&amp;#40;defn error-handler &amp;#91;input-chan&amp;#93;
+  &amp;#40;go
+    &amp;#40;if-let &amp;#91;{:keys &amp;#91;error&amp;#93;} &amp;#40;&amp;lt;! input-chan&amp;#41;&amp;#93;
+        ; You probably want prettier error handling than this.
+        &amp;#40;js/alert &amp;quot;Sorry, error occurred: &amp;quot; error&amp;#41;&amp;#41;&amp;#41;&amp;#41;
+      
+
+&amp;#40;wrap-rail order-chain {:username &amp;quot;steve&amp;quot;} error-handler&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The &lt;code&gt;order-chain&lt;/code&gt; function will  return a channel with a value looking like this, if it succeeds:&lt;/p&gt;&lt;pre&gt;&lt;code&gt;{:customer  {:name &amp;quot;John&amp;quot; :email &amp;quot;john@john.com&amp;quot;}
+ :orders    &amp;#91;{:id 1 :date &amp;quot;2015-23-01&amp;quot;} {:id 2 :date &amp;quot;2014-11-11&amp;quot;}&amp;#93;
+ :dashboard &amp;quot;&amp;lt;html&amp;gt;Nicely presented dashboard here&amp;lt;html&amp;gt;&amp;quot;}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Now, if you would like to use &lt;code&gt;order-chain&lt;/code&gt; for something different and still keep the nice guarantees provided by the architecture, that's trivial.&lt;/p&gt;&lt;pre&gt;&lt;code&gt;&amp;#40;defn username-search &amp;#91;{query :query}&amp;#93;
+  &amp;#40;http/get &amp;quot;mysite/search&amp;quot; {:q query}&amp;#41;&amp;#41;
+
+&amp;#40;defn search-for-orders &amp;#91;input-channel&amp;#93;
+  &amp;#40;-&amp;gt; input-channel
+      &amp;#40;=http= :username username-search&amp;#41;
+      order-chain&amp;#41;&amp;#41;
+      
+&amp;#40;wrap-rail search-for-orders {:query &amp;quot;ste&amp;#42;&amp;quot;} error-handler&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;There are, of course, some trade offs being made here, so a quick summary of pros and cons is in order:&lt;/p&gt;&lt;h3 id=&quot;pros&quot;&gt;Pros&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;Asynchronous code can be written as a simple procedure&lt;/li&gt;&lt;li&gt;Error handling is transparent and predictable&lt;/li&gt;&lt;li&gt;Short circuiting on error makes corrupted app states less likely.&lt;/li&gt;&lt;li&gt;Easy to inspect the data flowing through the chain&lt;/li&gt;&lt;li&gt;Functions are as pure as they can be&lt;/li&gt;&lt;li&gt;&lt;a href='https://www.youtube.com/watch?v=mtlTHmM1u10'&gt;Time is not important&lt;/a&gt;, your operations are guaranteed to be executed in order.&lt;/li&gt;&lt;/ul&gt;&lt;h3 id=&quot;cons&quot;&gt;Cons&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;Each function must accept a map as input, and know the shape of the data in it.&lt;/li&gt;&lt;li&gt;When code in core.async channels blow up, debugging can be a pain&lt;/li&gt;&lt;/ul&gt;&lt;h3 id=&quot;conclusion&quot;&gt;Conclusion&lt;/h3&gt;&lt;p&gt;This approach has proven to be quite efficient on my most recent project, the ability to freely reuse asynchronous functions to chain together operations from the UI-layer is quite useful and a lot of fun. Some extra complexity was introduced to make it happen, but the result is quite powerful.&lt;/p&gt;&lt;p&gt;I would consider this micro-architecture to be an experiment, it could be greatly improved or even completely replaced with something else. That's the beauty of Clojure, the conciseness and functional style tends to make code easily replaceable.  If you don't like something, delete it and put in the thing you want.  I'm hoping to expand on this in future blog posts, looking at things like:  &lt;/p&gt;&lt;ul&gt;&lt;li&gt;Use of macros for smoother API and more functional flex and power&lt;/li&gt;&lt;li&gt;Support for more flexibility, like iterations, structure of input/output&lt;/li&gt;&lt;li&gt;Support for doing custom error handling where needed.&lt;/li&gt;&lt;/ul&gt;
+</description>
+<pubDate>
+Sat, 26 Mar 2016 00:00:00 +0100
+</pubDate>
+</item>
+</channel>
+</rss>

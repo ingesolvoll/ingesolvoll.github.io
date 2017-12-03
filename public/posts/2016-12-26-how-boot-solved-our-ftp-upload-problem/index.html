@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"><![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"><![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"><![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--><html lang="en"><!--<![endif]-->
+<head>
+    <!-- Website Template designed by www.downloadwebsitetemplates.co.uk -->
+    <!-- Modified to fit Cryogen.-->
+    <meta charset="UTF-8">
+    <title>Inge Solvoll&#39;s Blog: How boot solved our FTP problem</title>
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="images/ico/apple-touch-icon-144.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="images/ico/apple-touch-icon-114.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="images/ico/apple-touch-icon-72.png">
+    <link rel="apple-touch-icon-precomposed" href="images/ico/apple-touch-icon-57.png">
+    <link rel="shortcut icon" href="images/ico/favicon.png">
+    <!--[if IE]><![endif]-->
+    <link href="/css/buttons.css" rel="stylesheet" type="text/css" />
+    <link href="/css/menu.css" rel="stylesheet" type="text/css" />
+    <link href="/css/reset.css" rel="stylesheet" type="text/css" />
+    <link href="/css/style.css" rel="stylesheet" type="text/css" />
+    <link href="/css/typography.css" rel="stylesheet" type="text/css" />
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/tomorrow-night-eighties.min.css">
+    <!--[if lt IE 9]><script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+</head>
+<body>
+
+<div id="left">
+
+    <p id="logo">
+        <a title="Inge Solvoll&#39;s Blog" href="/">
+            <span class="fa fa-rocket"></span>
+            <span class="text">Nucleus</span>
+        </a>
+    </p>
+
+    <div id="menucont" class="bodycontainer clearfix">
+        <div class="menutitle">
+            <p><span class="fa fa-reorder"></span><strong>Menu</strong></p>
+        </div>
+        <ul class="menu">
+            <li ><a title="Home" href="/">Home</a></li>
+            <li ><a title="Archives" href="/archives/">Archives</a></li>
+            
+            <li ><a title="Tags" href="/tags/">Tags</a></li>
+            
+            
+            <li >
+                <a href="/pages/about/">About</a>
+            </li>
+            
+            <li><a title="RSS" href="/feed.xml">RSS</a></li>
+        </ul>
+    </div>
+
+    <div id="socialmedia" class="clearfix">
+        <ul>
+            <li><a title="GitHub" href="./" rel="external"><span class="fa fa-github"></span></a></li>
+            <li><a title="Stack Overflow" href="./" rel="external"><span class="fa fa-stack-overflow"></span></a></li>
+            <li><a title="Google+" href="./" rel="external"><span class="fa fa-google-plus"></span></a></li>
+            <li><a title="LinkedIn" href="./" rel="external"><span class="fa fa-linkedin"></span></a></li>
+            <li><a title="Last.fm" href="./" rel="external"><span class="fa fa-lastfm"></span></a></li>
+        </ul>
+    </div>
+
+</div>
+
+<div id="right" class="clearfix">
+    
+<div id="post">
+    <div class="post-header">
+    <div id="post-meta" class="row">
+        <strong>26. desember 2016</strong>
+        
+    </div>
+    <h1>How boot solved our FTP problem</h1>
+</div>
+<div>
+    
+    <h3 id="limitations&#95;of&#95;maven">Limitations of Maven</h3><p>My company uses Maven and Jenkins for most of our build needs. We are pretty happy with the setup, it gets the job done. Except for the couple of builds that need to do an FTP upload.</p><p>The Wagon plugin with FTP extension seems to be your best bet for doing this in Maven. This is our setup:</p><pre><code>&lt;plugin&gt;
+    &lt;groupId&gt;org.codehaus.mojo&lt;/groupId&gt;
+    &lt;artifactId&gt;wagon-maven-plugin&lt;/artifactId&gt;
+    &lt;version&gt;1.0&lt;/version&gt;
+    &lt;executions&gt;
+        &lt;execution&gt;
+            &lt;id&gt;ftp-deploy&lt;/id&gt;
+            &lt;phase&gt;install&lt;/phase&gt;
+            &lt;goals&gt;
+                &lt;goal&gt;upload-single&lt;/goal&gt;
+            &lt;/goals&gt;
+            &lt;configuration&gt;
+                &lt;serverId&gt;server-id-on-jenkins&lt;/serverId&gt;
+                &lt;url&gt;ftp://myserver.com&lt;/url&gt;
+                &lt;fromFile&gt;${project.build.directory}/${project.build.finalName}.war&lt;/fromFile&gt;
+                &lt;toFile&gt;path/on/server/something.war&lt;/toFile&gt;
+            &lt;/configuration&gt;
+        &lt;/execution&gt;
+    &lt;/executions&gt;
+&lt;/plugin&gt;
+
+&lt;extensions&gt;
+    &lt;extension&gt;
+        &lt;groupId&gt;org.apache.maven.wagon&lt;/groupId&gt;
+        &lt;artifactId&gt;wagon-ftp&lt;/artifactId&gt;
+        &lt;version&gt;2.10&lt;/version&gt;
+    &lt;/extension&gt;
+&lt;/extensions&gt;
+</code></pre><p>We would have been ok with this amount of XML bloat if it all worked. But it doesn't. Our 50MB artifact upload takes <b>5-10 minutes</b>. With desktop FTP software it takes 8 seconds, so clearly this can be improved. Unfortunately, the configuration options for Wagon FTP are nowhere to be found.</p><h3 id="why&#95;so&#95;slow?">Why so slow?</h3><p>It took me less than 2 minutes to find the solution on [stackoverflow]. It turns out that FTP upload is extremely inefficient when using default buffer size. A buffer size of 1MB does the trick.</p><p>So what to do then, when Wagon has no options? I considered rolling my own Maven plugin for this, but life is too short for that.</p><h3 id="boot&#95;to&#95;the&#95;rescue">Boot to the rescue</h3><p>[Boot] is a relatively young build tool in a Clojure world dominated by Leiningen. It has a rather fresh approach by being less declarative and more script-centric than Maven and Leiningen.</p><p>With boot you just pull in the plain java/clojure libraries you need. No special plugins or xml/json. You organize your code as tasks that operate on an immutable file system abstraction. Now I'm free to use Apache Commons Net directly to get the job done, but I'd much rather use an idiomatic clojure wrapper. Turns out there are several of those, one of them is [clj-ftp]. Quite a nice API, this should cover most use cases:</p><pre><code> &#40;with-ftp &#91;client &quot;ftp://myserver.com&quot;&#93;
+        &#40;.setBufferSize client 1024000&#41;
+        &#40;client-put client local-file-path remote-path&#41;&#41;
+</code></pre><p>Making it available in my boot file is as simple as:</p><pre><code>&#40;set-env!
+  :dependencies '&#91;&#91;com.velisco/clj-ftp &quot;0.3.8&quot;&#93;&#93;&#41;
+
+&#40;require '&#91;miner.ftp :refer &#91;with-ftp client-put&#93;&#93;&#41;
+</code></pre><p>As in all other code environments, it is good practice to make as much as possible of the code pure and decoupled from the framework. Since boot is just clojure code, this is easy:</p><pre><code>&#40;defn find-war &#91;fileset&#93;
+  &#40;let &#91;{:keys &#91;dir path&#93;} &#40;-&gt;&gt; fileset
+                                output-files
+                                &#40;by-ext &#91;&quot;.war&quot;&#93;&#41;
+                                first&#41;&#93;
+         &#40;str &#40;.toString dir&#41; &quot;\\&quot; path&#41;&#41;&#41;
+
+&#40;defn ftp-upload! &#91;url local-path remote-path&#93;
+  &#40;with-ftp &#91;client url&#93;
+            &#40;.setBufferSize client 1024000&#41;
+            &#40;client-put client local-path remote-path&#41;&#41;
+</code></pre><p>Finally, we need to connect our code to boot tasks, so they can be executed by Jenkins. The boot way is through the <code>deftask</code> macro. Boot has lots of built in tasks, like <code>jar</code> and <code>compile</code>, and our newly created upload task fits nicely in a chain with the built-in ones.</p><pre><code>&#40;deftask upload &#91;&#93;
+   &#40;with-pass-thru fileset
+     &#40;ftp-upload! &quot;ftp://myserver.com&quot; &#40;find-war fileset&#41; &quot;path/on/server/something.war&quot;&#41;&#41;&#41;&#41;
+
+&#40;deftask build
+  &#40;comp &#40;compile&#41; &#40;jar&#41; &#40;uber&#41; &#40;war&#41; &#40;upload&#41;&#41;&#41;
+</code></pre><h3 id="full&#95;code&#95;listing">Full code listing</h3><p>The full boot build file is listed below. I'm completely new to boot, so I probably made tons of mistakes. But I think this is as compact, powerful and readable as it gets for integrating an arbitrary Java/Clojure library into your build!</p><pre><code>&#40;set-env!
+  :dependencies '&#91;&#91;com.velisco/clj-ftp &quot;0.3.8&quot;&#93;&#93;&#41;
+
+&#40;require '&#91;miner.ftp :refer &#91;with-ftp client-put&#93;&#93;&#41;
+
+&#40;defn find-war &#91;fileset&#93;
+  &#40;let &#91;{:keys &#91;dir path&#93;} &#40;-&gt;&gt; fileset
+                                output-files
+                                &#40;by-ext &#91;&quot;.war&quot;&#93;&#41;
+                                first&#41;&#93;
+         &#40;str &#40;.toString dir&#41; &quot;\\&quot; path&#41;&#41;&#41;
+
+&#40;defn ftp-upload! &#91;url local-path remote-path&#93;
+  &#40;with-ftp &#91;client url
+              :file-type :binary&#93;
+            &#40;.setBufferSize client 1024000&#41;
+            &#40;client-put client local-path remote-path&#41;&#41;
+
+&#40;deftask upload &#91;&#93;
+   &#40;with-pass-thru fileset
+     &#40;ftp-upload! &quot;ftp://myserver.com&quot; &#40;find-war fileset&#41; &quot;path/on/server/something.war&quot;&#41;&#41;&#41;&#41;
+
+&#40;deftask build &#91;&#93;
+  &#40;comp &#40;compile&#41; &#40;jar&#41; &#40;uber&#41; &#40;war&#41; &#40;upload&#41;&#41;&#41;
+</code></pre><p>hey</p>
+</div>
+
+<div id="post-tags">
+    <br/> 
+    <b>Tags: </b>
+    
+    <a href="/tags/clojure/">clojure</a>
+    
+    <a href="/tags/boot/">boot</a>
+    
+</div>
+
+<br/>
+
+    <div id="prev-next">
+        
+        <a class="button" href="/posts/2017-01-01-how-to-use-a-charting-library-in-reagent/">&laquo; How to use a charting library in Reagent</a>
+        
+        
+        <a class="right button" href="/posts/2016-03-26-railway-oriented-programming-with-clojurescript/">Railway oriented programming with Clojurescript &raquo;</a>
+        
+    </div>
+
+    
+
+
+</div>
+
+<hr/>
+<div id="footercont" class="clearfix">Copyright &copy; 2017 Inge Solvoll
+    <p>Powered by <a href="http://cryogenweb.org">Cryogen</a> | Free Website Template by <a title="free website templates" href="http://www.downloadwebsitetemplates.co.uk" rel="external">Download Website Templates</a></p>
+
+</div>
+</div>
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="/js/highlight.pack.js" type="text/javascript"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script src="/js/scripts.js" type="text/javascript"></script>
+
+
+</body>
+</html>

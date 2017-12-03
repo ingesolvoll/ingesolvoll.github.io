@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"><![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"><![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"><![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--><html lang="en"><!--<![endif]-->
+<head>
+    <!-- Website Template designed by www.downloadwebsitetemplates.co.uk -->
+    <!-- Modified to fit Cryogen.-->
+    <meta charset="UTF-8">
+    <title>Inge Solvoll&#39;s Blog: Re-frame: side effects as data</title>
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="images/ico/apple-touch-icon-144.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="images/ico/apple-touch-icon-114.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="images/ico/apple-touch-icon-72.png">
+    <link rel="apple-touch-icon-precomposed" href="images/ico/apple-touch-icon-57.png">
+    <link rel="shortcut icon" href="images/ico/favicon.png">
+    <!--[if IE]><![endif]-->
+    <link href="/css/buttons.css" rel="stylesheet" type="text/css" />
+    <link href="/css/menu.css" rel="stylesheet" type="text/css" />
+    <link href="/css/reset.css" rel="stylesheet" type="text/css" />
+    <link href="/css/style.css" rel="stylesheet" type="text/css" />
+    <link href="/css/typography.css" rel="stylesheet" type="text/css" />
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/tomorrow-night-eighties.min.css">
+    <!--[if lt IE 9]><script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+</head>
+<body>
+
+<div id="left">
+
+    <p id="logo">
+        <a title="Inge Solvoll&#39;s Blog" href="/">
+            <span class="fa fa-rocket"></span>
+            <span class="text">Nucleus</span>
+        </a>
+    </p>
+
+    <div id="menucont" class="bodycontainer clearfix">
+        <div class="menutitle">
+            <p><span class="fa fa-reorder"></span><strong>Menu</strong></p>
+        </div>
+        <ul class="menu">
+            <li ><a title="Home" href="/">Home</a></li>
+            <li ><a title="Archives" href="/archives/">Archives</a></li>
+            
+            <li ><a title="Tags" href="/tags/">Tags</a></li>
+            
+            
+            <li >
+                <a href="/pages/about/">About</a>
+            </li>
+            
+            <li><a title="RSS" href="/feed.xml">RSS</a></li>
+        </ul>
+    </div>
+
+    <div id="socialmedia" class="clearfix">
+        <ul>
+            <li><a title="GitHub" href="./" rel="external"><span class="fa fa-github"></span></a></li>
+            <li><a title="Stack Overflow" href="./" rel="external"><span class="fa fa-stack-overflow"></span></a></li>
+            <li><a title="Google+" href="./" rel="external"><span class="fa fa-google-plus"></span></a></li>
+            <li><a title="LinkedIn" href="./" rel="external"><span class="fa fa-linkedin"></span></a></li>
+            <li><a title="Last.fm" href="./" rel="external"><span class="fa fa-lastfm"></span></a></li>
+        </ul>
+    </div>
+
+</div>
+
+<div id="right" class="clearfix">
+    
+<div id="post">
+    <div class="post-header">
+    <div id="post-meta" class="row">
+        <strong>29. juni 2017</strong>
+        
+    </div>
+    <h1>Re-frame: side effects as data</h1>
+</div>
+<div>
+    
+    <p>Re-frame has a simple but powerful architecture that enables you to express yourself in pure data structures even with side-effect heavy code. In this post I will show a simple example of the patterns used.</p><h3 id="re-frame">Re-frame</h3><p>I'm going to assume that you have some basic knowledge about [Re-frame], the very popular lightweight application framework for [Reagent] applications. The architecture is very similar to React Redux, in that you have <em>event handlers / reducers</em> that take the current version of your state as an argument and returns a transformed version of the state.</p><h3 id="data_first">Data first</h3><p>Clojure is all about data. It has a huge standard library that allows you to manipulate your immutable data structures in every possible way. This is a great tool for reducers when doing their data crunching.</p><h3 id="how_about_those_nasty_side_effects?">How about those nasty side effects?</h3><p>Any serious app needs to do HTTP, navigation, cookies, local storage, and other kinds of effects that are not about manipulating some data structure. It turns out that the re-frame developers did some very serious thinking about this. They came up with the concept of <em>pluggable effects</em>. Instead of executing functions you will return data that tells some other party how to get the job done.</p><p>Rather than trying to explain this in words, I will use the amazing KLIPSE plugin to let you play around with these concepts yourself! Feel free to edit the code below to see what happens.</p><h3 id="boot_it_up!">Boot it up!</h3> First, we need to require re-frame, and transitively reagent, into this page<pre><code class="klipse-cljs nohighlight">(require '[re-frame.core :as re-frame])
+</code></pre><h4 id="introducing_events">Introducing events</h4><p>This is a typical re-frame event handler. We use <code>reg-event-fx</code> to get access to both incoming and outgoing side effects.</p><pre><code class="klipse-cljs nohighlight">
+(re-frame/reg-event-fx
+:show-message
+    (fn [incoming-effects [event-key message]]
+        (js/alert (str "I was DIRECTLY asked to print this: " message))))
+nil
+</code></pre><p>As you can see, the handler shows the provided message in a native javascript <code>alert</code> and returns nil (meaning nothing changed and there is nothing more that the framework needs to take care of). Click the button below to trigger the event and see the effect.</p><pre><code class="klipse-reagent nohighlight">[:button
+    {:on-click (fn [e] (re-frame/dispatch [:show-message "42"]))}
+    "Click me to alert something!"]
+</code></pre><p>For many cases, this will be just fine. But in a more complex system with less visible side effects, you quickly lose track of where you are when debugging. One thing that really helps in these cases is a full and complete overview of the code paths, after the fact. If we execute our side effects inside the black boxes that functions are, we have no such overview.</p><h3 id="effects_as_data">Effects as data</h3><p>If we manage to express our side effects as data, this overview becomes trivial to make. To do this we need a couple of building blocks. First out are pluggable effects. You are free to create your own types of side effects, using re-frame's <code>reg-fx</code> function.</p><pre><code class="klipse-cljs nohighlight">(re-frame/reg-fx
+    :alert
+    (fn [message]
+        (js/alert (str "I was INDIRECTLY asked to print this: " message))))
+nil
+</code></pre><p>Nothing too fancy there. We are just introducing a level of indirection, letting the framework do the work of connecting our data to the actual effect.</p><h3 id="logging">Logging</h3><p>To get the full trace that we want, we need a way to inspect the return value of this handler after it executed.</p><p>Re-frame uses [interceptors] for cross-cutting concerns like this. The one below runs after the event handler. Through its <code>context</code> parameter it has access to all metadata, including the return value of the handler. The <code>effects</code> function gives us the handler return value.</p><pre><code class="klipse-cljs nohighlight">
+(require '[re-frame.interceptor :refer [-&gt;interceptor get-effect]])
+
+(def debug-interceptor
+  (-&gt;interceptor
+    :id     :log-effects
+    :after  (fn [context]
+             (let [effects (get-effect context)
+                   event (re-frame/get-coeffect context :event)]
+               (if (seq effects)
+                 (js/alert (str "Event " event " caused side effect " effects)))
+               context))))
+</code></pre><p>Printing the event effect data to the console would probably be a much better idea, but since this is a demo inlined in a blog, we'll use an alert box.</p><h3 id="a_" pure95side95effecting95handler="pure95side95effecting95handler">A "pure" side effecting handler</h3><p>Now we have what we need to be able to inspect or test our side effect. We inject our interceptor into the event handler when registering it.</p><pre><code class="klipse-cljs nohighlight">(re-frame/reg-event-fx
+    :show-message-with-indirection
+    [debug-interceptor]
+    (fn [_ [_ message]] {:alert message}))
+nil
+</code></pre><p>And finally, here's a snippet that uses our new handler. Click the button to observe the alert box with the event data, prior to the actual effect.</p><pre><code class="klipse-reagent nohighlight">[:button
+    {:on-click (fn [e] (re-frame/dispatch [:show-message-with-indirection "42"]))}
+    "Click me to alert something!"]
+</code></pre><p>The difference between <code>(js/alert message)</code> and <code>{:alert message}</code> might seem insignificant. But having the trace of data at your fingertips makes a world of a difference when you're stuck trying to figure out why your chain of HTTP requests  has stalled. Unit testing also becomes trivial, as opposed to sniffing the presence of an alert box.</p><h3 id="event_ping_pong">Event ping pong</h3><p>I'm not super happy about the callback style of re-frame. Every time you need to do something asynchronous like HTTP, you need to name the event handler that should receive the callback. It very quickly turns into something that could be called  "event ping pong" or even "callback hell". [keechma] is a very interesting alternative framework, the [pipelines] are particluarly interesting.  But keechma does not have the same focus on effects as data.</p><p>I would love to see something like the keechma pipelines for re-frame, and I'm experimenting to see if I can find a nice and practical solution.</p><p>If you find this subject interesting hit me up on [reddit] or [twitter]!</p>
+</div>
+
+<div id="post-tags">
+    <br/> 
+    <b>Tags: </b>
+    
+    <a href="/tags/re-frame/">re-frame</a>
+    
+    <a href="/tags/reagent/">reagent</a>
+    
+    <a href="/tags/klipse/">klipse</a>
+    
+    <a href="/tags/clojurescript/">clojurescript</a>
+    
+</div>
+
+<br/>
+
+    <div id="prev-next">
+        
+        
+        <a class="right button" href="/posts/2017-06-22-plain-react-vs-reagent/">JSX vs Clojurescript: the showdown &raquo;</a>
+        
+    </div>
+
+    
+
+
+</div>
+
+<hr/>
+<div id="footercont" class="clearfix">Copyright &copy; 2017 Inge Solvoll
+    <p>Powered by <a href="http://cryogenweb.org">Cryogen</a> | Free Website Template by <a title="free website templates" href="http://www.downloadwebsitetemplates.co.uk" rel="external">Download Website Templates</a></p>
+
+</div>
+</div>
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="/js/highlight.pack.js" type="text/javascript"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script src="/js/scripts.js" type="text/javascript"></script>
+ <link rel="stylesheet" type="text/css" href="https://storage.googleapis.com/app.klipse.tech/css/codemirror.css">
+<script>
+window.klipse_settings = {
+  "selector" : ".klipse-cljs",
+  "selector_reagent" : ".klipse-reagent"
+};
+</script>
+<script src="https://storage.googleapis.com/app.klipse.tech/plugin/js/klipse_plugin.js"></script> 
+
+</body>
+</html>

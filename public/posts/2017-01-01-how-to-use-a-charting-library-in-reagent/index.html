@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"><![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"><![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"><![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--><html lang="en"><!--<![endif]-->
+<head>
+    <!-- Website Template designed by www.downloadwebsitetemplates.co.uk -->
+    <!-- Modified to fit Cryogen.-->
+    <meta charset="UTF-8">
+    <title>Inge Solvoll&#39;s Blog: How to use a charting library in Reagent</title>
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="images/ico/apple-touch-icon-144.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="images/ico/apple-touch-icon-114.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="images/ico/apple-touch-icon-72.png">
+    <link rel="apple-touch-icon-precomposed" href="images/ico/apple-touch-icon-57.png">
+    <link rel="shortcut icon" href="images/ico/favicon.png">
+    <!--[if IE]><![endif]-->
+    <link href="/css/buttons.css" rel="stylesheet" type="text/css" />
+    <link href="/css/menu.css" rel="stylesheet" type="text/css" />
+    <link href="/css/reset.css" rel="stylesheet" type="text/css" />
+    <link href="/css/style.css" rel="stylesheet" type="text/css" />
+    <link href="/css/typography.css" rel="stylesheet" type="text/css" />
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/tomorrow-night-eighties.min.css">
+    <!--[if lt IE 9]><script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+</head>
+<body>
+
+<div id="left">
+
+    <p id="logo">
+        <a title="Inge Solvoll&#39;s Blog" href="/">
+            <span class="fa fa-rocket"></span>
+            <span class="text">Nucleus</span>
+        </a>
+    </p>
+
+    <div id="menucont" class="bodycontainer clearfix">
+        <div class="menutitle">
+            <p><span class="fa fa-reorder"></span><strong>Menu</strong></p>
+        </div>
+        <ul class="menu">
+            <li ><a title="Home" href="/">Home</a></li>
+            <li ><a title="Archives" href="/archives/">Archives</a></li>
+            
+            <li ><a title="Tags" href="/tags/">Tags</a></li>
+            
+            
+            <li >
+                <a href="/pages/about/">About</a>
+            </li>
+            
+            <li><a title="RSS" href="/feed.xml">RSS</a></li>
+        </ul>
+    </div>
+
+    <div id="socialmedia" class="clearfix">
+        <ul>
+            <li><a title="GitHub" href="./" rel="external"><span class="fa fa-github"></span></a></li>
+            <li><a title="Stack Overflow" href="./" rel="external"><span class="fa fa-stack-overflow"></span></a></li>
+            <li><a title="Google+" href="./" rel="external"><span class="fa fa-google-plus"></span></a></li>
+            <li><a title="LinkedIn" href="./" rel="external"><span class="fa fa-linkedin"></span></a></li>
+            <li><a title="Last.fm" href="./" rel="external"><span class="fa fa-lastfm"></span></a></li>
+        </ul>
+    </div>
+
+</div>
+
+<div id="right" class="clearfix">
+    
+<div id="post">
+    <div class="post-header">
+    <div id="post-meta" class="row">
+        <strong>1. januar 2017</strong>
+        
+    </div>
+    <h1>How to use a charting library in Reagent</h1>
+</div>
+<div>
+    
+    <h3 id="charting_in_javascript">Charting in javascript</h3><p>There are several high quality charting libraries made for the browser. I chose Highcharts for this demo. Highcharts is an excellent commercial charting library with both great looking charts and simple configuration. I'm going to use this [example] as a basis for this demonstration.</p><h3 id="this_web_page_is_interactive">This web page is interactive</h3><p>I will be using the amazing [KLIPSE] plugin in this blog post. It turns all the code samples into live code that you can edit and experiment with.</p><p>First, we need to load Reagent, React and highcharts into the page. This should take about 5-10 seconds. After that, it will show the result <code>nil</code>, as expected for the <code>require</code> statement</p><pre><code class="klipse-cljs nohighlight">(require '[reagent.core :as r])
+(require '[cljsjs.highcharts])
+</code></pre><p>The config for our chart will reside in a reagent <code>atom</code>, allowing us to live-configure the chart later on.</p><pre><code class="klipse-cljs nohighlight">(def config-atom (r/atom nil))
+</code></pre><p>Now we make the reagent component that will render our chart. We hook on to the React lifecycle event <code>component-did-mount</code> to render the chart when our component has been added to the DOM. We also include <code>component-did-update</code> to re-render the chart on your config changes.</p><pre><code class="klipse-cljs nohighlight">
+(defn render-chart-fn [config-atom]
+  (fn [component]
+    (.chart js/Highcharts (r/dom-node component) (clj-&gt;js @config-atom))))
+
+(defn chart-ui [config-atom]
+  (r/create-class
+    {:component-did-mount (render-chart-fn config-atom)
+      :component-did-update (render-chart-fn config-atom)
+      :reagent-render (fn [config-atom]
+        @config-atom ;; Dirty hack, so reagent will re-render this component when config changes
+        [:div])}))
+</code></pre><p>One major gotcha here is the <code>clj-&gt;js</code> part. Without it, you will be sending Clojurescript data structures to Highcharts, with weird error messages and painful meaningless debugging as a result. Observe the difference below</p><pre><code class="klipse-cljs nohighlight">(type {:this :is
+  :not :javascript})
+</code></pre><pre><code class="klipse-cljs nohighlight">(type (clj-&gt;js {:this :however
+  :is :javascript}))
+</code></pre><p>Let's make a basic config for our chart and put it in the atom</p><pre><code class="klipse-cljs nohighlight">(def default-config
+  {:chart {:type :bar}
+  :title {:text "Chart title here"}
+  :xAxis {:categories ["Apples", "Bananas", "Oranges"]}
+  :yAxis {:title {:text "Fruit eaten"}}
+  :series [{:name "Jane" :data [1, 0, 4]}
+          {:name "John" :data [5, 7, 3]}]})
+
+(reset! config-atom default-config)
+</code></pre><p>The end result is rendered below.</p><pre><code class="klipse-reagent nohighlight">[chart-ui config-atom]
+</code></pre><p>You should try to edit the configuration. The chart will re-render immediately when you make changes. Try things like:</p><ul><li>Change the title</li><li>Change the category names</li><li>Change chart type from <code>:bar</code> to <code>:line</code></li></ul><p>As you can see, integrating any library in Reagent is fairly simple and concise. There are some pitfalls, some important ones have been covered here. The most significant one is the use of [externs] when you build your app with advanced optimizations. If you use [cljsjs], that won't be an issue. Chart libraries like highcharts, C3, D3 are on cljsjs.</p>
+</div>
+
+<div id="post-tags">
+    <br/> 
+    <b>Tags: </b>
+    
+    <a href="/tags/reagent/">reagent</a>
+    
+    <a href="/tags/klipse/">klipse</a>
+    
+    <a href="/tags/clojurescript/">clojurescript</a>
+    
+</div>
+
+<br/>
+
+    <div id="prev-next">
+        
+        <a class="button" href="/posts/2017-06-22-plain-react-vs-reagent/">&laquo; JSX vs Clojurescript: the showdown</a>
+        
+        
+        <a class="right button" href="/posts/2016-12-26-how-boot-solved-our-ftp-upload-problem/">How boot solved our FTP problem &raquo;</a>
+        
+    </div>
+
+    
+
+
+</div>
+
+<hr/>
+<div id="footercont" class="clearfix">Copyright &copy; 2017 Inge Solvoll
+    <p>Powered by <a href="http://cryogenweb.org">Cryogen</a> | Free Website Template by <a title="free website templates" href="http://www.downloadwebsitetemplates.co.uk" rel="external">Download Website Templates</a></p>
+
+</div>
+</div>
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="/js/highlight.pack.js" type="text/javascript"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script src="/js/scripts.js" type="text/javascript"></script>
+ <link rel="stylesheet" type="text/css" href="https://storage.googleapis.com/app.klipse.tech/css/codemirror.css">
+<script>
+window.klipse_settings = {
+  "selector" : ".klipse-cljs",
+  "selector_reagent" : ".klipse-reagent"
+};
+</script>
+<script src="https://storage.googleapis.com/app.klipse.tech/plugin/js/klipse_plugin.js"></script> 
+
+</body>
+</html>
