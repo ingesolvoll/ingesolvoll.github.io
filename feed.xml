@@ -12,11 +12,54 @@ http://ingesolvoll.github.io/
 This blog is awesome
 </description>
 <lastBuildDate>
-Thu, 07 Dec 2017 21:25:10 +0100
+Sun, 01 Apr 2018 00:43:34 +0200
 </lastBuildDate>
 <generator>
 clj-rss
 </generator>
+<item>
+<guid>
+http://ingesolvoll.github.io/posts/2018-04-01-kee-frame-putting-the-url-in-charge/
+</guid>
+<link>
+http://ingesolvoll.github.io/posts/2018-04-01-kee-frame-putting-the-url-in-charge/
+</link>
+<title>
+Kee-frame: Putting the URL in charge
+</title>
+<description>
+&lt;p&gt;Most developers will claim that TDD is part of their daily routine. But most of us fail to mention our actual favorite methodology, SDD.&lt;/p&gt;&lt;p&gt;Stackoverflow Driven Development is a very good thing. Sharing knowledge and experience moves everything forward, and we should keep going. But some issues are too large or too important to quick-fix through an upvoted stackoverflow answer. The &quot;best practice&quot; might not be the best for you.&lt;/p&gt;&lt;h2 id=&quot;how&amp;#95;to&amp;#95;load&amp;#95;data&amp;#95;from&amp;#95;the&amp;#95;server&amp;#95;when&amp;#95;navigating&amp;#95;to&amp;#95;a&amp;#95;view?&quot;&gt;How to load data from the server when navigating to a view?&lt;/h2&gt;&lt;p&gt;One very common Stackoverflow question for React developers is how to get React/Redux/Re-frame/etc to load data from the server at the correct time (when your view component is about to be rendered). You will usually be advised to use the React lifecycle methods. In re-frame it looks like this:&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;&amp;#40;defn customer-list &amp;#91;&amp;#95;&amp;#93;
+  &amp;#40;r/create-class
+    {:component-did-mount #&amp;#40;dispatch &amp;#91;:fetch-customers&amp;#93;&amp;#41;
+     :reagent-render      &amp;#40;fn &amp;#91;customers&amp;#93;
+                            &amp;#40;if &amp;#40;seq customers&amp;#41;
+                                &amp;#91;:ul &amp;#40;map &amp;#40;fn &amp;#91;customer&amp;#93;
+                                    &amp;#91;:li &amp;#40;:name customer&amp;#41;&amp;#93;&amp;#41;&amp;#41;&amp;#93;
+                                &amp;#91;:div &amp;quot;Loading customers&amp;quot;&amp;#93;&amp;#41;&amp;#41;}&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;This &quot;best practice&quot; works fairly well, but it has a couple of disadvantages:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;The React class verbosity hides the intent of your code&lt;/li&gt;&lt;li&gt;Your view code is no longer a pure function of your data, it has side effects.&lt;/li&gt;&lt;li&gt;Having your data loading events littered around in your UI code makes them very hard to find and follow.&lt;/li&gt;&lt;li&gt;It's unpredictable and tricky during development if you're not a React lifecycle expert.&lt;/li&gt;&lt;/ul&gt;&lt;h2 id=&quot;optimizing&amp;#95;for&amp;#95;development&quot;&gt;Optimizing for development&lt;/h2&gt;&lt;p&gt;Clojure developers know what a smooth development environment means for productivity and quality. It is not optional or nice to have, it is something you gladly pay for up front. But the way you organize your code also affects your workflow in a big way. Figwheel is possible because Clojure encourages you to push the mutable state towards the edge of your system, allowing most of your functions to be pure and thereby easily reloadable.&lt;/p&gt;&lt;p&gt;Most people get that part right. But it gets trickier from there. On the client you might have things like &lt;b&gt;&lt;i&gt;websockets,polling loops or web workers&lt;/i&gt;&lt;/b&gt;. When figwheel reloads, you need the lifecycle of those to be handled gracefully. It's not very productive to end up with either one dead socket or 20 duplicated ones, forcing you to refresh your browser. You can get a long way using &lt;a href='https://github.com/tolitius/mount'&gt;mount&lt;/a&gt;, but I don't think it's the right tool for this.&lt;/p&gt;&lt;p&gt;Figwheel shines when it renders the exact same screen as before, only with your code changes updated. No extra duplicated go-loops, no jumping to another tab in your app, no missing values in state. But for this to work you need to set up a lot of non-trivial stuff. It makes it unnecessarily hard to get started making SPAs in Clojurescript. And if you skip this work in the beginning, you build a lot of complexity and pain for the longer run.&lt;/p&gt;&lt;h2 id=&quot;pushing&amp;#95;you&amp;#95;in&amp;#95;the&amp;#95;right&amp;#95;direction&quot;&gt;Pushing you in the right direction&lt;/h2&gt;&lt;p&gt;The goal of &lt;a href='https://github.com/ingesolvoll/kee-frame'&gt;kee-frame&lt;/a&gt; is to make it easy to get started quickly with a nice re-frame setup, while providing tools that make it easier to do the right thing in common scenarios. It does so by &lt;b&gt;&lt;i&gt;putting the URL in charge&lt;/i&gt;&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;What does that mean, putting the URL in charge? It means putting the &lt;b&gt;&lt;i&gt;web&lt;/i&gt;&lt;/b&gt; back in &lt;b&gt;&lt;i&gt;web app&lt;/i&gt;&lt;/b&gt; . A friendly web app should:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Go to the most recently viewed page when browser's back button is clicked&lt;/li&gt;&lt;li&gt;View the exact same content when the browser's refresh button is clicked&lt;/li&gt;&lt;li&gt;Make all app URLs bookmarkable (a derived property from the previous point)&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;These are usability features, but they also help you towards a cleaner design for your SPA. If the view decides when to load some data, your view and your model are tightly connected. But if you put the URL in charge, the view and the model are disconnected and the URL controls them both.&lt;/p&gt;&lt;p&gt;&lt;b&gt;&lt;i&gt;Kee-frame doesn't force you to do this, it just provides you with the tools that make the best solutions the easiest ones.&lt;/i&gt;&lt;/b&gt;&lt;/p&gt;&lt;h2 id=&quot;a&amp;#95;kee-frame&amp;#95;app&amp;#95;is&amp;#95;a&amp;#95;re-frame&amp;#95;app&quot;&gt;A kee-frame app is a re-frame app&lt;/h2&gt;&lt;p&gt;Most of your re-frame code can stay just the way it is within kee-frame. Kee-frame just provides a smoother startup experience. With the code below, you skip the ceremony of setting up routing and rendering:&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;&amp;#40;kee-frame/start! {:routes         &amp;#91;&amp;quot;/&amp;quot;   {&amp;quot;&amp;quot;           :index
+                                           &amp;quot;customers&amp;quot;  :customers}&amp;#93;
+                   :initial-db     {:loading?           false
+                                    :logged-in-user     nil
+                                    :customers          nil}
+                   :root-component &amp;#91;main-view&amp;#93;}&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;What we have now is a routing system that shields you from the dirty details of URLs and navigation. Your app &lt;b&gt;&lt;i&gt;only operates on route data&lt;/i&gt;&lt;/b&gt; . The rest of kee-frame builds on this core feature, providing the following:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Controllers use route data to trigger re-frame events at the right time&lt;/li&gt;&lt;li&gt;When you need a &lt;code&gt;&amp;lt;a href=&amp;quot;something&amp;quot;&amp;gt;&lt;/code&gt;, kee-frame generates that link for you.&lt;/li&gt;&lt;li&gt;If you want to navigate the browser to a different URL in a re-frame event, kee-frame has a side-effect handler for that. Based on pure data of course.&lt;/li&gt;&lt;li&gt;A reagent component to choose the right view for your route data.&lt;/li&gt;&lt;/ul&gt;&lt;h2 id=&quot;url-driven&amp;#95;data&amp;#95;loading&amp;#95;(uddl)&quot;&gt;URL-driven data loading (UDDL)&lt;/h2&gt;&lt;p&gt;Ok, that's not a real acronym. But let's revisit the data loading example. With kee-frame, this is how you do it:&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;&amp;#40;kee-frame/reg-controller   :customers
+                            {:params &amp;#40;fn &amp;#91;{:keys &amp;#91;handler&amp;#93;}&amp;#93;
+                                       &amp;#40;when &amp;#40;= handler :customers&amp;#41; true&amp;#41;&amp;#41;
+                             :start  &amp;#40;fn &amp;#91;ctx &amp;#95;&amp;#93;
+                                       &amp;#91;:fetch-customers&amp;#93;&amp;#41;}&amp;#41;
+
+&amp;#40;defn customer-list &amp;#91;customers&amp;#93;
+    &amp;#40;if &amp;#40;seq customers&amp;#41;
+        &amp;#91;:ul &amp;#40;map &amp;#40;fn &amp;#91;customer&amp;#93;
+            &amp;#91;:li &amp;#40;:name customer&amp;#41;&amp;#93;&amp;#41;&amp;#41;&amp;#93;
+        &amp;#91;:div &amp;quot;Loading customers&amp;quot;&amp;#93;&amp;#41;&amp;#41;
+
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The reagent component is very simple now, just a pure function of its parameter. You could easily sprinkle some unit tests on that.&lt;/p&gt;&lt;p&gt;The &lt;code&gt;params&lt;/code&gt; function is invoked every time the route changes. When it returns a non-nil value different from the previous value, the &lt;code&gt;start&lt;/code&gt; function is invoked. If the &lt;code&gt;start&lt;/code&gt; function returns a re-frame event vector, it does a &lt;code&gt;dispatch&lt;/code&gt;.&lt;/p&gt;&lt;h2 id=&quot;profit!&quot;&gt;Profit!&lt;/h2&gt;&lt;p&gt;So, what did we achieve? A few things, but they're significant:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Pure UI components&lt;/li&gt;&lt;li&gt;High cohesion as you can put your controller next to your data loading events and get a clear overview of your data flow.&lt;/li&gt;&lt;li&gt;Timing of events is simple and intuitive: everything happens on route change&lt;/li&gt;&lt;li&gt;System performs predictably during development. Re-render is just re-render. Side effects happen on route change, not on code reload.&lt;/li&gt;&lt;/ul&gt;&lt;h2 id=&quot;more&amp;#95;info&quot;&gt;More info&lt;/h2&gt;&lt;p&gt;This blog post is a minimal and simplified description of kee-frame. Go to the &lt;a href='https://github.com/ingesolvoll/kee-frame'&gt;kee-frame github page&lt;/a&gt; for a more in-depth introduction.&lt;/p&gt;
+</description>
+<pubDate>
+Sun, 01 Apr 2018 00:00:00 +0200
+</pubDate>
+</item>
 <item>
 <guid>
 http://ingesolvoll.github.io/posts/2017-06-29-re-frame-side-effects-as-data/

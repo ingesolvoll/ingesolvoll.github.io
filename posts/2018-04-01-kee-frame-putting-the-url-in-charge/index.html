@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<!--[if lt IE 7 ]><html class="ie ie6" lang="en"><![endif]-->
+<!--[if IE 7 ]><html class="ie ie7" lang="en"><![endif]-->
+<!--[if IE 8 ]><html class="ie ie8" lang="en"><![endif]-->
+<!--[if (gte IE 9)|!(IE)]><!--><html lang="en"><!--<![endif]-->
+<head>
+    <!-- Website Template designed by www.downloadwebsitetemplates.co.uk -->
+    <!-- Modified to fit Cryogen.-->
+    <meta charset="UTF-8">
+    <title>Inge Solvoll&#39;s Blog: Kee-frame: Putting the URL in charge</title>
+    <meta name="description" content="">
+    <meta name="keywords" content="">
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="images/ico/apple-touch-icon-144.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="images/ico/apple-touch-icon-114.png">
+    <link rel="apple-touch-icon-precomposed" sizes="72x72" href="images/ico/apple-touch-icon-72.png">
+    <link rel="apple-touch-icon-precomposed" href="images/ico/apple-touch-icon-57.png">
+    <link rel="shortcut icon" href="images/ico/favicon.png">
+    <!--[if IE]><![endif]-->
+    <link href="/css/buttons.css" rel="stylesheet" type="text/css" />
+    <link href="/css/menu.css" rel="stylesheet" type="text/css" />
+    <link href="/css/reset.css" rel="stylesheet" type="text/css" />
+    <link href="/css/style.css" rel="stylesheet" type="text/css" />
+    <link href="/css/typography.css" rel="stylesheet" type="text/css" />
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.7.0/styles/tomorrow-night-eighties.min.css">
+    <!--[if lt IE 9]><script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+</head>
+<body>
+
+<div id="left">
+
+    <p id="logo">
+        <a title="Inge Solvoll&#39;s Blog" href="/">
+            <span class="fa fa-rocket"></span>
+            <span class="text">Inge Solvoll's blog</span>
+        </a>
+    </p>
+
+    <div id="menucont" class="bodycontainer clearfix">
+        <div class="menutitle">
+            <p><span class="fa fa-reorder"></span><strong>Menu</strong></p>
+        </div>
+        <ul class="menu">
+            <li ><a title="Home" href="/">Home</a></li>
+            <li ><a title="Archives" href="/archives/">Archives</a></li>
+            
+            <li ><a title="Tags" href="/tags/">Tags</a></li>
+            
+            
+            <li >
+                <a href="/pages/about/">About</a>
+            </li>
+            
+            <li><a title="RSS" href="/feed.xml">RSS</a></li>
+        </ul>
+    </div>
+
+    <div id="socialmedia" class="clearfix">
+        <ul>
+            <li><a title="GitHub" href="./" rel="external"><span class="fa fa-github"></span></a></li>
+            <li><a title="Stack Overflow" href="./" rel="external"><span class="fa fa-stack-overflow"></span></a></li>
+            <li><a title="Google+" href="./" rel="external"><span class="fa fa-google-plus"></span></a></li>
+            <li><a title="LinkedIn" href="./" rel="external"><span class="fa fa-linkedin"></span></a></li>
+            <li><a title="Last.fm" href="./" rel="external"><span class="fa fa-lastfm"></span></a></li>
+        </ul>
+    </div>
+
+</div>
+
+<div id="right" class="clearfix">
+    
+<div id="post">
+    <div class="post-header">
+    <div id="post-meta" class="row">
+        <strong>April 1, 2018</strong>
+        
+    </div>
+    <h1>Kee-frame: Putting the URL in charge</h1>
+</div>
+<div>
+    
+    <p>Most developers will claim that TDD is part of their daily routine. But most of us fail to mention our actual favorite methodology, SDD.</p><p>Stackoverflow Driven Development is a very good thing. Sharing knowledge and experience moves everything forward, and we should keep going. But some issues are too large or too important to quick-fix through an upvoted stackoverflow answer. The "best practice" might not be the best for you.</p><h2 id="how&#95;to&#95;load&#95;data&#95;from&#95;the&#95;server&#95;when&#95;navigating&#95;to&#95;a&#95;view?">How to load data from the server when navigating to a view?</h2><p>One very common Stackoverflow question for React developers is how to get React/Redux/Re-frame/etc to load data from the server at the correct time (when your view component is about to be rendered). You will usually be advised to use the React lifecycle methods. In re-frame it looks like this:</p><pre><code class="clojure">&#40;defn customer-list &#91;&#95;&#93;
+  &#40;r/create-class
+    {:component-did-mount #&#40;dispatch &#91;:fetch-customers&#93;&#41;
+     :reagent-render      &#40;fn &#91;customers&#93;
+                            &#40;if &#40;seq customers&#41;
+                                &#91;:ul &#40;map &#40;fn &#91;customer&#93;
+                                    &#91;:li &#40;:name customer&#41;&#93;&#41;&#41;&#93;
+                                &#91;:div &quot;Loading customers&quot;&#93;&#41;&#41;}&#41;&#41;
+</code></pre><p>This "best practice" works fairly well, but it has a couple of disadvantages:</p><ul><li>The React class verbosity hides the intent of your code</li><li>Your view code is no longer a pure function of your data, it has side effects.</li><li>Having your data loading events littered around in your UI code makes them very hard to find and follow.</li><li>It's unpredictable and tricky during development if you're not a React lifecycle expert.</li></ul><h2 id="optimizing&#95;for&#95;development">Optimizing for development</h2><p>Clojure developers know what a smooth development environment means for productivity and quality. It is not optional or nice to have, it is something you gladly pay for up front. But the way you organize your code also affects your workflow in a big way. Figwheel is possible because Clojure encourages you to push the mutable state towards the edge of your system, allowing most of your functions to be pure and thereby easily reloadable.</p><p>Most people get that part right. But it gets trickier from there. On the client you might have things like <b><i>websockets,polling loops or web workers</i></b>. When figwheel reloads, you need the lifecycle of those to be handled gracefully. It's not very productive to end up with either one dead socket or 20 duplicated ones, forcing you to refresh your browser. You can get a long way using <a href='https://github.com/tolitius/mount'>mount</a>, but I don't think it's the right tool for this.</p><p>Figwheel shines when it renders the exact same screen as before, only with your code changes updated. No extra duplicated go-loops, no jumping to another tab in your app, no missing values in state. But for this to work you need to set up a lot of non-trivial stuff. It makes it unnecessarily hard to get started making SPAs in Clojurescript. And if you skip this work in the beginning, you build a lot of complexity and pain for the longer run.</p><h2 id="pushing&#95;you&#95;in&#95;the&#95;right&#95;direction">Pushing you in the right direction</h2><p>The goal of <a href='https://github.com/ingesolvoll/kee-frame'>kee-frame</a> is to make it easy to get started quickly with a nice re-frame setup, while providing tools that make it easier to do the right thing in common scenarios. It does so by <b><i>putting the URL in charge</i></b>.</p><p>What does that mean, putting the URL in charge? It means putting the <b><i>web</i></b> back in <b><i>web app</i></b> . A friendly web app should:</p><ul><li>Go to the most recently viewed page when browser's back button is clicked</li><li>View the exact same content when the browser's refresh button is clicked</li><li>Make all app URLs bookmarkable (a derived property from the previous point)</li></ul><p>These are usability features, but they also help you towards a cleaner design for your SPA. If the view decides when to load some data, your view and your model are tightly connected. But if you put the URL in charge, the view and the model are disconnected and the URL controls them both.</p><p><b><i>Kee-frame doesn't force you to do this, it just provides you with the tools that make the best solutions the easiest ones.</i></b></p><h2 id="a&#95;kee-frame&#95;app&#95;is&#95;a&#95;re-frame&#95;app">A kee-frame app is a re-frame app</h2><p>Most of your re-frame code can stay just the way it is within kee-frame. Kee-frame just provides a smoother startup experience. With the code below, you skip the ceremony of setting up routing and rendering:</p><pre><code class="clojure">&#40;kee-frame/start! {:routes         &#91;&quot;/&quot;   {&quot;&quot;           :index
+                                           &quot;customers&quot;  :customers}&#93;
+                   :initial-db     {:loading?           false
+                                    :logged-in-user     nil
+                                    :customers          nil}
+                   :root-component &#91;main-view&#93;}&#41;
+</code></pre><p>What we have now is a routing system that shields you from the dirty details of URLs and navigation. Your app <b><i>only operates on route data</i></b> . The rest of kee-frame builds on this core feature, providing the following:</p><ul><li>Controllers use route data to trigger re-frame events at the right time</li><li>When you need a <code>&lt;a href=&quot;something&quot;&gt;</code>, kee-frame generates that link for you.</li><li>If you want to navigate the browser to a different URL in a re-frame event, kee-frame has a side-effect handler for that. Based on pure data of course.</li><li>A reagent component to choose the right view for your route data.</li></ul><h2 id="url-driven&#95;data&#95;loading&#95;(uddl)">URL-driven data loading (UDDL)</h2><p>Ok, that's not a real acronym. But let's revisit the data loading example. With kee-frame, this is how you do it:</p><pre><code class="clojure">&#40;kee-frame/reg-controller   :customers
+                            {:params &#40;fn &#91;{:keys &#91;handler&#93;}&#93;
+                                       &#40;when &#40;= handler :customers&#41; true&#41;&#41;
+                             :start  &#40;fn &#91;ctx &#95;&#93;
+                                       &#91;:fetch-customers&#93;&#41;}&#41;
+
+&#40;defn customer-list &#91;customers&#93;
+    &#40;if &#40;seq customers&#41;
+        &#91;:ul &#40;map &#40;fn &#91;customer&#93;
+            &#91;:li &#40;:name customer&#41;&#93;&#41;&#41;&#93;
+        &#91;:div &quot;Loading customers&quot;&#93;&#41;&#41;
+
+</code></pre><p>The reagent component is very simple now, just a pure function of its parameter. You could easily sprinkle some unit tests on that.</p><p>The <code>params</code> function is invoked every time the route changes. When it returns a non-nil value different from the previous value, the <code>start</code> function is invoked. If the <code>start</code> function returns a re-frame event vector, it does a <code>dispatch</code>.</p><h2 id="profit!">Profit!</h2><p>So, what did we achieve? A few things, but they're significant:</p><ul><li>Pure UI components</li><li>High cohesion as you can put your controller next to your data loading events and get a clear overview of your data flow.</li><li>Timing of events is simple and intuitive: everything happens on route change</li><li>System performs predictably during development. Re-render is just re-render. Side effects happen on route change, not on code reload.</li></ul><h2 id="more&#95;info">More info</h2><p>This blog post is a minimal and simplified description of kee-frame. Go to the <a href='https://github.com/ingesolvoll/kee-frame'>kee-frame github page</a> for a more in-depth introduction.</p>
+</div>
+
+<div id="post-tags">
+    <br/> 
+    <b>Tags: </b>
+    
+    <a href="/tags/re-frame/">re-frame</a>
+    
+    <a href="/tags/kee-frame/">kee-frame</a>
+    
+    <a href="/tags/clojurescript/">clojurescript</a>
+    
+</div>
+
+<br/>
+
+    <div id="prev-next">
+        
+        
+        <a class="right button" href="/posts/2017-06-29-re-frame-side-effects-as-data/">Re-frame: side effects as data &raquo;</a>
+        
+    </div>
+
+    
+
+
+</div>
+
+<hr/>
+<div id="footercont" class="clearfix">Copyright &copy; 2018 Inge Solvoll
+    <p>Powered by <a href="http://cryogenweb.org">Cryogen</a> | Free Website Template by <a title="free website templates" href="http://www.downloadwebsitetemplates.co.uk" rel="external">Download Website Templates</a></p>
+
+</div>
+</div>
+<script src="//code.jquery.com/jquery-1.11.0.min.js"></script>
+<script src="/js/highlight.pack.js" type="text/javascript"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+<script src="/js/scripts.js" type="text/javascript"></script>
+
+
+</body>
+</html>
