@@ -12,11 +12,79 @@ http://ingesolvoll.github.io/
 This blog is awesome
 </description>
 <lastBuildDate>
-Sun, 01 Apr 2018 00:43:34 +0200
+Sun, 01 Apr 2018 20:56:37 +0200
 </lastBuildDate>
 <generator>
 clj-rss
 </generator>
+<item>
+<guid>
+http://ingesolvoll.github.io/posts/2018-04-01-learning-kee-frame-in-5-minutes/
+</guid>
+<link>
+http://ingesolvoll.github.io/posts/2018-04-01-learning-kee-frame-in-5-minutes/
+</link>
+<title>
+Learning kee-frame in 5 minutes
+</title>
+<description>
+&lt;p&gt;You are here, so you probably heard about the &lt;a href='https://github.com/ingesolvoll/kee-frame'&gt;kee-frame framework&lt;/a&gt;. It's  built on re-frame, and should be easy to learn. Let's see if that's true! If you want to see the full context for the code samples in this tutorial, they're all part of the &lt;a href='https://github.com/ingesolvoll/kee-frame-sample'&gt;kee-frame demo app&lt;/a&gt;&lt;/p&gt;&lt;h2 id=&quot;installation&quot;&gt;Installation&lt;/h2&gt;&lt;p&gt;If you're starting a brand new project, I would recommend using a lein template, like this:&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;lein new re-frame &amp;lt;your-project-name&amp;gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Once you have a working re-frame project, just add kee-frame as a dependency to your project:&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;&amp;#91;kee-frame &amp;quot;0.1.8&amp;quot;&amp;#93;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Now run &lt;code&gt;lein figwheel&lt;/code&gt; and we're good to go.&lt;/p&gt;&lt;h2 id=&quot;startup&quot;&gt;Startup&lt;/h2&gt;&lt;p&gt;The &lt;code&gt;start!&lt;/code&gt; function hooks everything up, including &lt;strong&gt;routing, spec-validation, debug logging, initial db and rendering&lt;/strong&gt; .&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;&amp;#40;require '&amp;#91;kee-frame.core :as k&amp;#93;&amp;#41;
+
+&amp;#40;def routes &amp;#91;&amp;quot;&amp;quot; {&amp;quot;/&amp;quot;                       :live
+                 &amp;#91;&amp;quot;/league/&amp;quot; :id &amp;quot;/&amp;quot; :tab&amp;#93; :league}&amp;#93;&amp;#41;
+
+&amp;#40;def initial-db {:leagues       nil}&amp;#41;
+
+&amp;#40;s/def ::league &amp;#40;s/keys :req-un &amp;#91;::caption ::id&amp;#93;&amp;#41;&amp;#41;
+&amp;#40;s/def ::leagues &amp;#40;s/nilable &amp;#40;s/coll-of ::league&amp;#41;&amp;#41;&amp;#41;
+&amp;#40;s/def ::db-spec &amp;#40;s/keys :req-un &amp;#91;::leagues&amp;#93;&amp;#41;&amp;#41;
+
+&amp;#40;k/start! {:debug?         true
+           :routes         routes
+           :initial-db     initial-db
+           :root-component &amp;#91;main-panel&amp;#93;
+           :app-db-spec    ::db-spec}&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;controllers&quot;&gt;Controllers&lt;/h2&gt;&lt;p&gt;After running &lt;code&gt;start!&lt;/code&gt;, we're ready to play with controllers. This one will dispatch the event &lt;code&gt;&amp;#91;:league/load 3&amp;#93;&lt;/code&gt; when we're at the url &lt;code&gt;/league/3&lt;/code&gt;.&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;&amp;#40;reg-controller :league
+                {:params &amp;#40;fn &amp;#91;{:keys &amp;#91;handler route-params&amp;#93;}&amp;#93;
+                           &amp;#40;when &amp;#40;= handler :league&amp;#41;
+                             &amp;#40;:id route-params&amp;#41;&amp;#41;&amp;#41;
+                 :start  &amp;#91;:league/load&amp;#93;}&amp;#41; ;; Start can be either a function returning an event vector or just an event vector directly
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The next controller starts and stops a polling loop when we enter and leave the live page.&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;&amp;#40;reg-controller :live-polling
+                {:params &amp;#40;fn &amp;#91;{:keys &amp;#91;handler&amp;#93;}&amp;#93;
+                           &amp;#40;when &amp;#40;= handler :live&amp;#41; true&amp;#41;&amp;#41;
+                 :start  &amp;#91;:live/start&amp;#93;
+                 :stop   &amp;#91;:live/stop&amp;#93;}&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;event&amp;#95;chains&quot;&gt;Event chains&lt;/h2&gt;&lt;p&gt;Chains are just regular re-frame FX events that are chained together by the framework. Let's first have a look at a very typical pair of events loading some data over HTTP:&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;&amp;#40;reg-event-fx :leagues/load
+              &amp;#40;fn &amp;#91;&amp;#95; &amp;#95;&amp;#93;
+                {:http-xhrio   {:uri        &amp;quot;http://api.football-data.org/v1/competitions/?season=2017&amp;quot;
+                                :on-success &amp;#91;:leagues/load-1&amp;#93;}}&amp;#41;&amp;#41;
+
+&amp;#40;reg-event-fx :leagues/load-1
+              &amp;#40;fn &amp;#91;{:keys &amp;#91;db&amp;#93;} &amp;#91;&amp;#95; leagues&amp;#93;&amp;#93;
+                {:db &amp;#40;assoc db :leagues &amp;#40;filter &amp;#40;comp whitelist :id&amp;#41; leagues&amp;#41;&amp;#41;}&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;The exact same events can be created with chains like this:&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;&amp;#40;reg-chain :leagues/load
+
+           &amp;#40;fn &amp;#91;&amp;#95; &amp;#95;&amp;#93;
+             {:http-xhrio   {:uri &amp;quot;http://api.football-data.org/v1/competitions/?season=2017&amp;quot;}}&amp;#41;
+
+           &amp;#40;fn &amp;#91;{:keys &amp;#91;db&amp;#93;} &amp;#91;&amp;#95; leagues&amp;#93;&amp;#93;
+             {:db &amp;#40;assoc db :leagues &amp;#40;filter &amp;#40;comp whitelist :id&amp;#41; leagues&amp;#41;&amp;#41;}&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;navigation&amp;#95;and&amp;#95;links&quot;&gt;Navigation and links&lt;/h2&gt;&lt;p&gt;Trigger a browser navigation to the URL &lt;code&gt;/league/3/table&lt;/code&gt;:&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;&amp;#40;reg-event-fx :leagues/select
+              &amp;#40;fn &amp;#91;&amp;#95; &amp;#91;league-id&amp;#93;&amp;#93;
+                {:navigate-to &amp;#91;:league :id league-id :tab :table&amp;#93;}&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Generate a good old href from plain data:&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;&amp;#91;:a.nav-link {:href &amp;#40;k/path-for :league :id 3 :tab :fixtures&amp;#41;} &amp;quot;Latest results&amp;quot;&amp;#93;
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Render different views depending on what URL you're on&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;&amp;#91;k/switch-route &amp;#40;fn &amp;#91;route-data&amp;#93; &amp;#40;:handler route-data&amp;#41;&amp;#41;
+    :league &amp;#91;league/league-dispatch&amp;#93;
+    :live   &amp;#91;live/live&amp;#93;
+    nil     &amp;#91;:div &amp;quot;Loading...&amp;quot;&amp;#93;&amp;#93;
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;and&amp;#95;we're&amp;#95;done!&quot;&gt;And we're done!&lt;/h2&gt;&lt;p&gt;That should cover most of the API for kee-frame. There are of course more details, head over to the &lt;a href='https://github.com/ingesolvoll/kee-frame'&gt;project page&lt;/a&gt; to learn more!&lt;/p&gt;
+</description>
+<pubDate>
+Sun, 01 Apr 2018 00:00:00 +0200
+</pubDate>
+</item>
 <item>
 <guid>
 http://ingesolvoll.github.io/posts/2018-04-01-kee-frame-putting-the-url-in-charge/
