@@ -49,7 +49,7 @@
             
             
             <li >
-                <a href="/pages/about/">About</a>
+                <a href="/pages/about/">About me</a>
             </li>
             
             <li><a title="RSS" href="/feed.xml">RSS</a></li>
@@ -81,7 +81,7 @@
 <div>
     
     <p>You are here, so you probably heard about the <a href='https://github.com/ingesolvoll/kee-frame'>kee-frame framework</a>. It's  built on re-frame, and should be easy to learn. Let's see if that's true! If you want to see the full context for the code samples in this tutorial, they're all part of the <a href='https://github.com/ingesolvoll/kee-frame-sample'>kee-frame demo app</a></p><h2 id="installation">Installation</h2><p>If you're starting a brand new project, I would recommend using a lein template, like this:</p><pre><code class="clojure">lein new re-frame &lt;your-project-name&gt;
-</code></pre><p>Once you have a working re-frame project, just add kee-frame as a dependency to your project:</p><pre><code class="clojure">&#91;kee-frame &quot;0.1.8&quot;&#93;
+</code></pre><p>Once you have a working re-frame project, just add kee-frame as a dependency to your project:</p><pre><code class="clojure">&#91;kee-frame &quot;0.2.1&quot;&#93;
 </code></pre><p>Now run <code>lein figwheel</code> and we're good to go.</p><h2 id="startup">Startup</h2><p>The <code>start!</code> function hooks everything up, including <strong>routing, spec-validation, debug logging, initial db and rendering</strong> .</p><pre><code class="clojure">&#40;require '&#91;kee-frame.core :as k&#93;&#41;
 
 &#40;def routes &#91;&quot;&quot; {&quot;/&quot;                       :live
@@ -126,7 +126,7 @@
 </code></pre><h2 id="navigation&#95;and&#95;links">Navigation and links</h2><p>Trigger a browser navigation to the URL <code>/league/3/table</code>:</p><pre><code class="clojure">&#40;reg-event-fx :leagues/select
               &#40;fn &#91;&#95; &#91;league-id&#93;&#93;
                 {:navigate-to &#91;:league :id league-id :tab :table&#93;}&#41;&#41;
-</code></pre><p>Generate a good old href from plain data:</p><pre><code class="clojure">&#91;:a.nav-link {:href &#40;k/path-for :league :id 3 :tab :fixtures&#41;} &quot;Latest results&quot;&#93;
+</code></pre><p>Generate a good old href from plain data:</p><pre><code class="clojure">&#91;:a.nav-link {:href &#40;k/path-for &#91;:league :id 3 :tab :fixtures&#93;&#41;} &quot;Latest results&quot;&#93;
 </code></pre><p>Render different views depending on what URL you're on</p><pre><code class="clojure">&#91;k/switch-route &#40;fn &#91;route-data&#93; &#40;:handler route-data&#41;&#41;
     :league &#91;league/league-dispatch&#93;
     :live   &#91;live/live&#93;
