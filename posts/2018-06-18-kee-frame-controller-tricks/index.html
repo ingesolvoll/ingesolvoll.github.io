@@ -7,7 +7,7 @@
     <!-- Website Template designed by www.downloadwebsitetemplates.co.uk -->
     <!-- Modified to fit Cryogen.-->
     <meta charset="UTF-8">
-    <title>Inge Solvoll&#39;s Blog: Posts Tagged &quot;react&quot;</title>
+    <title>Inge Solvoll&#39;s Blog: Kee-frame controller tricks</title>
     <meta name="description" content="">
     <meta name="keywords" content="">
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
@@ -67,17 +67,49 @@
 
 <div id="right" class="clearfix">
     
-<div id="posts-by-tag">
-    <div id="page-header">
-        <h1>Posts Tagged &quot;react&quot;</h1>
+<div id="post">
+    <div class="post-header">
+    <div id="post-meta" class="row">
+        <strong>June 18, 2018</strong>
+        
     </div>
-    <ul>
+    <h1>Kee-frame controller tricks</h1>
+</div>
+<div>
     
-        <li>
-            <a href="/posts/2017-06-22-plain-react-vs-reagent/">JSX vs Clojurescript: the showdown</a>
-        </li>
+    <h2 id="the&#95;power&#95;of&#95;controllers">The power of controllers</h2><p>The <a href='https://github.com/ingesolvoll/kee-frame#controller-state-transitions'>controller rules</a>, taken from <a href='https://keechma.com/'>keechma</a>, are centered around pure route data. That's really powerful, as you can use mostly plain Clojure to get what you want  from your controllers. Often the solution is dead simple, but it's not always easy to spot. This is a guide to the most useful tricks, it will be expanded as new ones appear!</p><h2 id="how&#95;to&#95;trigger&#95;an&#95;event&#95;once,&#95;at&#95;startup">How to trigger an event once, at startup</h2><p>So you want something to happen only once, but immediately. Things like:</p><ul><li>Fetching initial data from the server</li><li>Start a polling loop</li><li>Letting the user know we are loaded and ready to go</li></ul><p>What you need is a <code>:params</code> function that triggers start when invoked for the first time, and then always returns the  same result as the first invocation. That sounds like a plain Clojure function that we all know:</p><pre><code class="clojure">{:params &#40;constantly true&#41; ;; true, or whatever non-nil value you prefer
+ :start  &#91;:call-me-once-then-never-again&#93;}
+</code></pre><h2 id="how&#95;to&#95;restart&#95;a&#95;controller&#95;on&#95;every&#95;route&#95;change">How to restart a controller on every route change</h2><p>Maybe you want to store a trail of breadcrumbs, maybe you want some logging done. Either way, this one is also quite simple.</p><p>For this case you need a <code>:params</code> function that returns a new unique result for every new unique route data. What tiny but familiar Clojure function could we use to achieve that?</p><pre><code class="clojure">{:params identity
+ :start  &#91;:log-user-activity&#93;}
+</code></pre><h2 id="getting&#95;weird">Getting weird</h2><p>As you can see, most things with controllers are quite simple and use plain Clojure. Just for fun, let's have a look at a controller that triggers randomly:</p><pre><code class="clojure">{:params #&#40;rand-nth &#91;nil % % %&#93;&#41;
+ :start  &#91;:will-receive-the-route-data-quite-often-but-not-always&#93;}
+</code></pre><p>That's it for now. Please report your useful tricks at <a href='https://github.com/ingesolvoll/kee-frame/issues'>kee-frame issues</a> and I'll add them here!</p>
+</div>
+
+<div id="post-tags">
+    <br/> 
+    <b>Tags: </b>
     
-    </ul>
+    <a href="/tags/re-frame/">re-frame</a>
+    
+    <a href="/tags/kee-frame/">kee-frame</a>
+    
+    <a href="/tags/clojurescript/">clojurescript</a>
+    
+</div>
+
+<br/>
+
+    <div id="prev-next">
+        
+        
+        <a class="right button" href="/posts/2018-04-01-learning-kee-frame-in-5-minutes/">Learning kee-frame in 5 minutes &raquo;</a>
+        
+    </div>
+
+    
+
+
 </div>
 
 <hr/>

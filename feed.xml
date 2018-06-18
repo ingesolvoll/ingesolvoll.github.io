@@ -12,11 +12,34 @@ http://ingesolvoll.github.io/
 This blog is awesome
 </description>
 <lastBuildDate>
-Wed, 18 Apr 2018 23:27:48 +0200
+Mon, 18 Jun 2018 23:33:59 +0200
 </lastBuildDate>
 <generator>
 clj-rss
 </generator>
+<item>
+<guid>
+http://ingesolvoll.github.io/posts/2018-06-18-kee-frame-controller-tricks/
+</guid>
+<link>
+http://ingesolvoll.github.io/posts/2018-06-18-kee-frame-controller-tricks/
+</link>
+<title>
+Kee-frame controller tricks
+</title>
+<description>
+&lt;h2 id=&quot;the&amp;#95;power&amp;#95;of&amp;#95;controllers&quot;&gt;The power of controllers&lt;/h2&gt;&lt;p&gt;The &lt;a href='https://github.com/ingesolvoll/kee-frame#controller-state-transitions'&gt;controller rules&lt;/a&gt;, taken from &lt;a href='https://keechma.com/'&gt;keechma&lt;/a&gt;, are centered around pure route data. That's really powerful, as you can use mostly plain Clojure to get what you want  from your controllers. Often the solution is dead simple, but it's not always easy to spot. This is a guide to the most useful tricks, it will be expanded as new ones appear!&lt;/p&gt;&lt;h2 id=&quot;how&amp;#95;to&amp;#95;trigger&amp;#95;an&amp;#95;event&amp;#95;once,&amp;#95;at&amp;#95;startup&quot;&gt;How to trigger an event once, at startup&lt;/h2&gt;&lt;p&gt;So you want something to happen only once, but immediately. Things like:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Fetching initial data from the server&lt;/li&gt;&lt;li&gt;Start a polling loop&lt;/li&gt;&lt;li&gt;Letting the user know we are loaded and ready to go&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;What you need is a &lt;code&gt;:params&lt;/code&gt; function that triggers start when invoked for the first time, and then always returns the  same result as the first invocation. That sounds like a plain Clojure function that we all know:&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;{:params &amp;#40;constantly true&amp;#41; ;; true, or whatever non-nil value you prefer
+ :start  &amp;#91;:call-me-once-then-never-again&amp;#93;}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;how&amp;#95;to&amp;#95;restart&amp;#95;a&amp;#95;controller&amp;#95;on&amp;#95;every&amp;#95;route&amp;#95;change&quot;&gt;How to restart a controller on every route change&lt;/h2&gt;&lt;p&gt;Maybe you want to store a trail of breadcrumbs, maybe you want some logging done. Either way, this one is also quite simple.&lt;/p&gt;&lt;p&gt;For this case you need a &lt;code&gt;:params&lt;/code&gt; function that returns a new unique result for every new unique route data. What tiny but familiar Clojure function could we use to achieve that?&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;{:params identity
+ :start  &amp;#91;:log-user-activity&amp;#93;}
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;getting&amp;#95;weird&quot;&gt;Getting weird&lt;/h2&gt;&lt;p&gt;As you can see, most things with controllers are quite simple and use plain Clojure. Just for fun, let's have a look at a controller that triggers randomly:&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;{:params #&amp;#40;rand-nth &amp;#91;nil % % %&amp;#93;&amp;#41;
+ :start  &amp;#91;:will-receive-the-route-data-quite-often-but-not-always&amp;#93;}
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;That's it for now. Please report your useful tricks at &lt;a href='https://github.com/ingesolvoll/kee-frame/issues'&gt;kee-frame issues&lt;/a&gt; and I'll add them here!&lt;/p&gt;
+</description>
+<pubDate>
+Mon, 18 Jun 2018 00:00:00 +0200
+</pubDate>
+</item>
 <item>
 <guid>
 http://ingesolvoll.github.io/posts/2018-04-01-learning-kee-frame-in-5-minutes/
