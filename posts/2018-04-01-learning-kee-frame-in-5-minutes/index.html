@@ -78,7 +78,7 @@
 <div>
     
     <p>You are here, so you probably heard about the <a href='https://github.com/ingesolvoll/kee-frame'>kee-frame framework</a>. It's  built on re-frame, and should be easy to learn. Let's see if that's true! If you want to see the full context for the code samples in this tutorial, they're all part of the <a href='https://github.com/ingesolvoll/kee-frame-sample'>kee-frame demo app</a></p><h2 id="installation">Installation</h2><p>If you're starting a brand new project, I would recommend using a lein template, like this:</p><pre><code class="clojure">lein new re-frame &lt;your-project-name&gt;
-</code></pre><p>Once you have a working re-frame project, just add kee-frame as a dependency to your project:</p><pre><code class="clojure">&#91;kee-frame &quot;0.2.1&quot;&#93;
+</code></pre><p>Once you have a working re-frame project, just add kee-frame as a dependency to your project:</p><pre><code class="clojure">&#91;kee-frame &quot;0.2.7&quot;&#93;
 </code></pre><p>Now run <code>lein figwheel</code> and we're good to go.</p><h2 id="startup">Startup</h2><p>The <code>start!</code> function hooks everything up, including <strong>routing, spec-validation, debug logging, initial db and rendering</strong> .</p><pre><code class="clojure">&#40;require '&#91;kee-frame.core :as k&#93;&#41;
 
 &#40;def routes &#91;&quot;&quot; {&quot;/&quot;                       :live
