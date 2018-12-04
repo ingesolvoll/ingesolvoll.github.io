@@ -7,7 +7,7 @@
     <!-- Website Template designed by www.downloadwebsitetemplates.co.uk -->
     <!-- Modified to fit Cryogen.-->
     <meta charset="UTF-8">
-    <title>Inge Solvoll&#39;s Blog: How to use a charting library in Reagent</title>
+    <title>Inge Solvoll&#39;s Blog: Revisited: How to use a charting library in reagent</title>
     <meta name="description" content="">
     <meta name="keywords" content="">
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
@@ -70,43 +70,39 @@
 <div id="post">
     <div class="post-header">
     <div id="post-meta" class="row">
-        <strong>January 1, 2017</strong>
+        <strong>December 4, 2018</strong>
         
     </div>
-    <h1>How to use a charting library in Reagent</h1>
+    <h1>Revisited: How to use a charting library in reagent</h1>
 </div>
 <div>
     
-    <h1 id="this_post_is_outdated">This post is outdated</h1><p>The technique detailed in this blog post works. But there is a cleaner way, recommended by the re-frame team.</p><p><a href="/posts/2018-12-04-revisited-how-to-use-a-charting-library-in-re-frame/">Read the updated guide here</a></p><h3 id="charting_in_javascript">Charting in javascript</h3><p>There are several high quality charting libraries made for the browser. I chose Highcharts for this demo. Highcharts is an excellent commercial charting library with both great looking charts and simple configuration. I'm going to use this [example] as a basis for this demonstration.</p><h3 id="this_web_page_is_interactive">This web page is interactive</h3><p>I will be using the amazing [KLIPSE] plugin in this blog post. It turns all the code samples into live code that you can edit and experiment with.</p><p>First, we need to load Reagent, React and highcharts into the page. This should take about 5-10 seconds. After that, it will show the result <code>nil</code>, as expected for the <code>require</code> statement</p><pre><code class="klipse-cljs nohighlight">(require '[reagent.core :as r])
+    <h2 id="improved_advice">Improved advice</h2><p>I wrote a <a href="http://ingesolvoll.github.io/posts/2017-01-01-how-to-use-a-charting-library-in-reagent/">blog post</a> about this  subject a couple of years ago and a lot of people read it. Unfortunately it contains some advice that has been <a href="https://github.com/Day8/re-frame/blob/master/docs/Using-Stateful-JS-Components.md">proven wrong/not optimal</a>.  The re-frame explanation of this concept is nice and understandable, but I wanted to make an interactive example so it's even clearer.</p><h2 id="requirements">Requirements</h2><p>We'll be purely practical in this walkthrough, so let's get right to it.</p><pre><code class="klipse-cljs nohighlight">(require '[reagent.core :as r])
 (require '[cljsjs.highcharts])
-</code></pre><p>The config for our chart will reside in a reagent <code>atom</code>, allowing us to live-configure the chart later on.</p><pre><code class="klipse-cljs nohighlight">(def config-atom (r/atom nil))
-</code></pre><p>Now we make the reagent component that will render our chart. We hook on to the React lifecycle event <code>component-did-mount</code> to render the chart when our component has been added to the DOM. We also include <code>component-did-update</code> to re-render the chart on your config changes.</p><pre><code class="klipse-cljs nohighlight">
-(defn render-chart-fn [config-atom]
-  (fn [component]
-    (.chart js/Highcharts (r/dom-node component) (clj-&gt;js @config-atom))))
+</code></pre><p>We'll use a regular reagent atom as our mutable data container. It could be anything with a "ratom" behaviour, like a  re-frame subscription. This reference will hold the configuration and data for the chart.</p><pre><code class="klipse-cljs nohighlight">(def config-atom (r/atom nil))
+</code></pre><h2 id="inner/outer">Inner/outer</h2><p>Now for the interesting bit. The trick here, as described in the re-frame docs, is to split the integration in two.</p><ul><li>An outer component that closes over the Clojure reactive reference</li><li>An inner component that accepts a React props map derived from the reactive reference</li></ul><h2 id="the_inner_component">The inner component</h2><p>For this example the <code>mount-chart</code> and <code>update-chart</code> functions are identical. In less trivial cases they are likely different, and you probably want to call the <code>update-chart</code> function at the end of your <code>mount-chart</code> function.</p><pre><code class="klipse-cljs nohighlight">
+(defn mount-chart [comp]
+    (.chart js/Highcharts (r/dom-node comp) (clj-&gt;js (r/props comp))))
 
-(defn chart-ui [config-atom]
+(defn update-chart [comp]
+    (mount-chart comp))
+
+(defn chart-inner []
   (r/create-class
-    {:component-did-mount (render-chart-fn config-atom)
-      :component-did-update (render-chart-fn config-atom)
-      :reagent-render (fn [config-atom]
-        @config-atom ;; Dirty hack, so reagent will re-render this component when config changes
-        [:div])}))
-</code></pre><p>One major gotcha here is the <code>clj-&gt;js</code> part. Without it, you will be sending Clojurescript data structures to Highcharts, with weird error messages and painful meaningless debugging as a result. Observe the difference below</p><pre><code class="klipse-cljs nohighlight">(type {:this :is
-  :not :javascript})
-</code></pre><pre><code class="klipse-cljs nohighlight">(type (clj-&gt;js {:this :however
-  :is :javascript}))
-</code></pre><p>Let's make a basic config for our chart and put it in the atom</p><pre><code class="klipse-cljs nohighlight">(def default-config
-  {:chart {:type :bar}
-  :title {:text "Chart title here"}
-  :xAxis {:categories ["Apples", "Bananas", "Oranges"]}
-  :yAxis {:title {:text "Fruit eaten"}}
-  :series [{:name "Jane" :data [1, 0, 4]}
-          {:name "John" :data [5, 7, 3]}]})
-
-(reset! config-atom default-config)
-</code></pre><p>The end result is rendered below.</p><pre><code class="klipse-reagent nohighlight">[chart-ui config-atom]
-</code></pre><p>You should try to edit the configuration. The chart will re-render immediately when you make changes. Try things like:</p><ul><li>Change the title</li><li>Change the category names</li><li>Change chart type from <code>:bar</code> to <code>:line</code></li></ul><p>As you can see, integrating any library in Reagent is fairly simple and concise. There are some pitfalls, some important ones have been covered here. The most significant one is the use of [externs] when you build your app with advanced optimizations. If you use [cljsjs], that won't be an issue. Chart libraries like highcharts, C3, D3 are on cljsjs.</p>
+    {:component-did-mount   mount-chart
+     :component-did-update  update-chart
+     :reagent-render        (fn [comp] [:div])}))
+</code></pre><h2 id="the_outer_component">The outer component</h2><p>This one handles the mutable state from the clojurescript side. Dereference the atom/subscription/reaction and pass the necessary information on to the inner component. The inner component will re-render on changes to these props, giving  us the behaviour we want.</p><pre><code class="klipse-cljs nohighlight">(defn chart-outer [config]
+    [chart-inner @config])
+</code></pre><h2 id="the_configuration">The configuration</h2><p>The following renders a simple chart below. Feel free to play around with the config to see what happens!</p><pre><code class="klipse-cljs nohighlight">(reset! config-atom {:chart {:type   :bar}
+                             :title  {:text "Chart title here"}
+                             :xAxis  {:categories ["Apples", "Bananas", "Oranges"]}
+                             :yAxis  {:title {:text "Fruit eaten"}}
+                             :series [{:name "Jane" :data [1, 0, 4]}
+                                      {:name "John" :data [5, 7, 3]}]})
+nil
+</code></pre><pre><code class="klipse-reagent nohighlight">[chart-outer config-atom]
+</code></pre>
 </div>
 
 <div id="post-tags">
@@ -125,10 +121,8 @@
 
     <div id="prev-next">
         
-        <a class="button" href="/posts/2017-06-22-plain-react-vs-reagent/">&laquo; JSX vs Clojurescript: the showdown</a>
         
-        
-        <a class="right button" href="/posts/2016-12-26-how-boot-solved-our-ftp-upload-problem/">How boot solved our FTP problem &raquo;</a>
+        <a class="right button" href="/posts/2018-06-18-kee-frame-controller-tricks/">Kee-frame controller tricks &raquo;</a>
         
     </div>
 
