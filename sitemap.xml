@@ -5,7 +5,7 @@
 http://ingesolvoll.github.io/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -13,7 +13,7 @@ http://ingesolvoll.github.io/index.html
 http://ingesolvoll.github.io/posts/2018-06-18-kee-frame-controller-tricks/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -21,7 +21,15 @@ http://ingesolvoll.github.io/posts/2018-06-18-kee-frame-controller-tricks/index.
 http://ingesolvoll.github.io/posts/2017-06-22-plain-react-vs-reagent/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
+</lastmod>
+</url>
+<url>
+<loc>
+http://ingesolvoll.github.io/posts/2021-11-20-deploying-to-clojars/index.html
+</loc>
+<lastmod>
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -29,7 +37,7 @@ http://ingesolvoll.github.io/posts/2017-06-22-plain-react-vs-reagent/index.html
 http://ingesolvoll.github.io/posts/2016-12-26-how-boot-solved-our-ftp-upload-problem/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -37,7 +45,7 @@ http://ingesolvoll.github.io/posts/2016-12-26-how-boot-solved-our-ftp-upload-pro
 http://ingesolvoll.github.io/posts/2018-04-01-learning-kee-frame-in-5-minutes/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -45,7 +53,7 @@ http://ingesolvoll.github.io/posts/2018-04-01-learning-kee-frame-in-5-minutes/in
 http://ingesolvoll.github.io/posts/2016-03-26-railway-oriented-programming-with-clojurescript/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -53,7 +61,7 @@ http://ingesolvoll.github.io/posts/2016-03-26-railway-oriented-programming-with-
 http://ingesolvoll.github.io/posts/2017-01-01-how-to-use-a-charting-library-in-reagent/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -61,7 +69,7 @@ http://ingesolvoll.github.io/posts/2017-01-01-how-to-use-a-charting-library-in-r
 http://ingesolvoll.github.io/posts/2018-04-01-kee-frame-putting-the-url-in-charge/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -69,7 +77,7 @@ http://ingesolvoll.github.io/posts/2018-04-01-kee-frame-putting-the-url-in-charg
 http://ingesolvoll.github.io/posts/2017-06-29-re-frame-side-effects-as-data/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -77,7 +85,7 @@ http://ingesolvoll.github.io/posts/2017-06-29-re-frame-side-effects-as-data/inde
 http://ingesolvoll.github.io/posts/2018-12-04-revisited-how-to-use-a-charting-library-in-re-frame/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -85,7 +93,7 @@ http://ingesolvoll.github.io/posts/2018-12-04-revisited-how-to-use-a-charting-li
 http://ingesolvoll.github.io/posts/2021-07-05-specced-re-frame/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -93,7 +101,7 @@ http://ingesolvoll.github.io/posts/2021-07-05-specced-re-frame/index.html
 http://ingesolvoll.github.io/authors/Inge Solvoll/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -101,7 +109,7 @@ http://ingesolvoll.github.io/authors/Inge Solvoll/index.html
 http://ingesolvoll.github.io/404.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -109,7 +117,7 @@ http://ingesolvoll.github.io/404.html
 http://ingesolvoll.github.io/archives/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -117,7 +125,7 @@ http://ingesolvoll.github.io/archives/index.html
 http://ingesolvoll.github.io/tags/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -125,7 +133,7 @@ http://ingesolvoll.github.io/tags/index.html
 http://ingesolvoll.github.io/tags/klipse/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -133,7 +141,7 @@ http://ingesolvoll.github.io/tags/klipse/index.html
 http://ingesolvoll.github.io/tags/boot/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -141,7 +149,7 @@ http://ingesolvoll.github.io/tags/boot/index.html
 http://ingesolvoll.github.io/tags/clojure/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -149,7 +157,7 @@ http://ingesolvoll.github.io/tags/clojure/index.html
 http://ingesolvoll.github.io/tags/spec/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -157,7 +165,7 @@ http://ingesolvoll.github.io/tags/spec/index.html
 http://ingesolvoll.github.io/tags/clojurescript/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -165,7 +173,7 @@ http://ingesolvoll.github.io/tags/clojurescript/index.html
 http://ingesolvoll.github.io/tags/reagent/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -173,7 +181,7 @@ http://ingesolvoll.github.io/tags/reagent/index.html
 http://ingesolvoll.github.io/tags/re-frame/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -181,7 +189,7 @@ http://ingesolvoll.github.io/tags/re-frame/index.html
 http://ingesolvoll.github.io/tags/kee-frame/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -189,7 +197,7 @@ http://ingesolvoll.github.io/tags/kee-frame/index.html
 http://ingesolvoll.github.io/tags/react/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -197,7 +205,7 @@ http://ingesolvoll.github.io/tags/react/index.html
 http://ingesolvoll.github.io/tags/jsx/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -205,7 +213,15 @@ http://ingesolvoll.github.io/tags/jsx/index.html
 http://ingesolvoll.github.io/pages/about/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
+</lastmod>
+</url>
+<url>
+<loc>
+http://ingesolvoll.github.io/p/3/index.html
+</loc>
+<lastmod>
+2021-11-21
 </lastmod>
 </url>
 <url>
@@ -213,7 +229,7 @@ http://ingesolvoll.github.io/pages/about/index.html
 http://ingesolvoll.github.io/p/2/index.html
 </loc>
 <lastmod>
-2021-07-06
+2021-11-21
 </lastmod>
 </url>
 </urlset>

@@ -12,11 +12,62 @@ http://ingesolvoll.github.io/
 This blog is awesome
 </description>
 <lastBuildDate>
-Tue, 06 Jul 2021 09:27:04 +0200
+Sun, 21 Nov 2021 12:46:36 +0100
 </lastBuildDate>
 <generator>
 clj-rss
 </generator>
+<item>
+<guid>
+http://ingesolvoll.github.io/posts/2021-11-20-deploying-to-clojars/
+</guid>
+<link>
+http://ingesolvoll.github.io/posts/2021-11-20-deploying-to-clojars/
+</link>
+<title>
+Deploying to clojars
+</title>
+<description>
+&lt;h2 id=&quot;deploying&amp;#95;to&amp;#95;clojars&quot;&gt;Deploying to clojars&lt;/h2&gt;&lt;p&gt;This is just a very short post to document my port of  &lt;a href='https://slipset.github.io/posts/deploying-to-clojars'&gt;this excellent blog solution&lt;/a&gt;. Before you continue reading, you should read that other one first as I won't repeat all the relevant info here. In particular, you need to set up a Circle CI context containing your credentials.&lt;/p&gt;&lt;p&gt;As the original post says, if deployment depends on a number of manual steps, it quickly becomes a barrier to getting new versions out. The solution outlined here automates everything, so the only thing you need to do is to create a new release tag on github that looks like &lt;code&gt;Release-1.2.3&lt;/code&gt;.&lt;/p&gt;&lt;h2 id=&quot;steps&quot;&gt;Steps&lt;/h2&gt;&lt;p&gt;The original post contains most of the info you need. This post focuses on the steps specific to tools.deps. The build tooling around tools.deps is becoming really streamlined and makes it quite easy to achieve the same setup. It even saves you from having to make the project-version runtime configurable, as the version is easily available in your build script.&lt;/p&gt;&lt;h3 id=&quot;deps.edn&quot;&gt;deps.edn&lt;/h3&gt;&lt;p&gt;Here's your minimal project file.&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;{:paths   &amp;#91;&amp;quot;src&amp;quot;&amp;#93;
+ :aliases {:build {:deps       {io.github.seancorfield/build-clj
+                                {:git/tag &amp;quot;v0.5.0&amp;quot; :git/sha &amp;quot;2ceb95a&amp;quot;}}
+                   :ns-default build}}
+ :deps    {org.clojure/clojure {:mvn/version &amp;quot;1.10.1&amp;quot;}}}
+&lt;/code&gt;&lt;/pre&gt;&lt;/p&gt;&lt;h3 id=&quot;build.clj&quot;&gt;build.clj&lt;/h3&gt;&lt;p&gt;This is the major difference from the leiningen approach. Since the build script is just clojure, you can access  the tag/version directly without any further trickery.&lt;/p&gt;&lt;pre&gt;&lt;code class=&quot;clojure&quot;&gt;&amp;#40;ns build
+  &amp;#40;:require
+   &amp;#91;clojure.string :as str&amp;#93;
+   &amp;#91;org.corfield.build :as bb&amp;#93;&amp;#41;&amp;#41;
+
+&amp;#40;def lib 'your/lib&amp;#41;
+
+&amp;#40;def release-marker &amp;quot;Release-&amp;quot;&amp;#41;
+
+&amp;#40;defn extract-version &amp;#91;tag&amp;#93;
+  &amp;#40;str/replace-first tag release-marker &amp;quot;&amp;quot;&amp;#41;&amp;#41;
+
+&amp;#40;defn maybe-deploy &amp;#91;opts&amp;#93;
+  &amp;#40;if-let &amp;#91;tag &amp;#40;System/getenv &amp;quot;CIRCLE&amp;#95;TAG&amp;quot;&amp;#41;&amp;#93;
+    &amp;#40;do
+      &amp;#40;println &amp;quot;Found tag &amp;quot; tag&amp;#41;
+      &amp;#40;if &amp;#40;re-find &amp;#40;re-pattern release-marker&amp;#41; tag&amp;#41;
+        &amp;#40;do
+          &amp;#40;println &amp;quot;Deploying to clojars...&amp;quot;&amp;#41;
+          &amp;#40;-&amp;gt; opts
+              &amp;#40;assoc :lib lib :version &amp;#40;extract-version tag&amp;#41;&amp;#41;
+              &amp;#40;bb/jar&amp;#41;
+              &amp;#40;bb/deploy&amp;#41;&amp;#41;&amp;#41;
+        &amp;#40;do
+          &amp;#40;println &amp;quot;Tag is not a release tag, skipping deploy&amp;quot;&amp;#41;
+          opts&amp;#41;&amp;#41;&amp;#41;
+    &amp;#40;do
+      &amp;#40;println &amp;quot;No tag found, skipping deploy&amp;quot;&amp;#41;
+      opts&amp;#41;&amp;#41;&amp;#41;
+&lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;running&amp;#95;it&quot;&gt;Running it&lt;/h2&gt;&lt;p&gt;From here, you just run &lt;code&gt;clojure -T:build maybe-deploy&lt;/code&gt;. Insert that command in your config.yml. &lt;a href='https://github.com/ingesolvoll/re-statecharts/blob/main/.circleci/config.yml'&gt;Here's a working example YAML&lt;/a&gt;&lt;/p&gt;
+</description>
+<pubDate>
+Sat, 20 Nov 2021 00:00:00 +0100
+</pubDate>
+</item>
 <item>
 <guid>
 http://ingesolvoll.github.io/posts/2021-07-05-specced-re-frame/
