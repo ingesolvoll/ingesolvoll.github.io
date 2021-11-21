@@ -12,17 +12,17 @@ http://ingesolvoll.github.io/
 This blog is awesome
 </description>
 <lastBuildDate>
-Sun, 21 Nov 2021 12:46:36 +0100
+Sun, 21 Nov 2021 12:55:20 +0100
 </lastBuildDate>
 <generator>
 clj-rss
 </generator>
 <item>
 <guid>
-http://ingesolvoll.github.io/posts/2021-11-20-deploying-to-clojars/
+http://ingesolvoll.github.io/posts/2021-11-21-deploying-to-clojars/
 </guid>
 <link>
-http://ingesolvoll.github.io/posts/2021-11-20-deploying-to-clojars/
+http://ingesolvoll.github.io/posts/2021-11-21-deploying-to-clojars/
 </link>
 <title>
 Deploying to clojars
@@ -65,7 +65,7 @@ Deploying to clojars
 &lt;/code&gt;&lt;/pre&gt;&lt;h2 id=&quot;running&amp;#95;it&quot;&gt;Running it&lt;/h2&gt;&lt;p&gt;From here, you just run &lt;code&gt;clojure -T:build maybe-deploy&lt;/code&gt;. Insert that command in your config.yml. &lt;a href='https://github.com/ingesolvoll/re-statecharts/blob/main/.circleci/config.yml'&gt;Here's a working example YAML&lt;/a&gt;&lt;/p&gt;
 </description>
 <pubDate>
-Sat, 20 Nov 2021 00:00:00 +0100
+Sun, 21 Nov 2021 00:00:00 +0100
 </pubDate>
 </item>
 <item>

@@ -7,7 +7,7 @@
     <!-- Website Template designed by www.downloadwebsitetemplates.co.uk -->
     <!-- Modified to fit Cryogen.-->
     <meta charset="UTF-8">
-    <title>Inge Solvoll&#39;s Blog: Posts by Inge Solvoll </title>
+    <title>Inge Solvoll&#39;s Blog: Deploying to clojars</title>
     <meta name="description" content="">
     <meta name="keywords" content="">
     <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
@@ -67,100 +67,65 @@
 
 <div id="right" class="clearfix">
     
-<div id="posts">
-    <div id="page-header" class="post-header">
-        <h1>Posts by Inge Solvoll</h1>
+<div id="post">
+    <div class="post-header">
+    <div id="post-meta" class="row">
+        <strong>November 21, 2021</strong>
+        
     </div>
+    <h1>Deploying to clojars</h1>
+</div>
+<div>
     
-    <h4>2021 November</h4>
-    <ul>
+    <h2 id="deploying&#95;to&#95;clojars">Deploying to clojars</h2><p>This is just a very short post to document my port of  <a href='https://slipset.github.io/posts/deploying-to-clojars'>this excellent blog solution</a>. Before you continue reading, you should read that other one first as I won't repeat all the relevant info here. In particular, you need to set up a Circle CI context containing your credentials.</p><p>As the original post says, if deployment depends on a number of manual steps, it quickly becomes a barrier to getting new versions out. The solution outlined here automates everything, so the only thing you need to do is to create a new release tag on github that looks like <code>Release-1.2.3</code>.</p><h2 id="steps">Steps</h2><p>The original post contains most of the info you need. This post focuses on the steps specific to tools.deps. The build tooling around tools.deps is becoming really streamlined and makes it quite easy to achieve the same setup. It even saves you from having to make the project-version runtime configurable, as the version is easily available in your build script.</p><h3 id="deps.edn">deps.edn</h3><p>Here's your minimal project file.<pre><code class="clojure">{:paths   &#91;&quot;src&quot;&#93;
+ :aliases {:build {:deps       {io.github.seancorfield/build-clj
+                                {:git/tag &quot;v0.5.0&quot; :git/sha &quot;2ceb95a&quot;}}
+                   :ns-default build}}
+ :deps    {org.clojure/clojure {:mvn/version &quot;1.10.1&quot;}}}
+</code></pre></p><h3 id="build.clj">build.clj</h3><p>This is the major difference from the leiningen approach. Since the build script is just clojure, you can access  the tag/version directly without any further trickery.</p><pre><code class="clojure">&#40;ns build
+  &#40;:require
+   &#91;clojure.string :as str&#93;
+   &#91;org.corfield.build :as bb&#93;&#41;&#41;
+
+&#40;def lib 'your/lib&#41;
+
+&#40;def release-marker &quot;Release-&quot;&#41;
+
+&#40;defn extract-version &#91;tag&#93;
+  &#40;str/replace-first tag release-marker &quot;&quot;&#41;&#41;
+
+&#40;defn maybe-deploy &#91;opts&#93;
+  &#40;if-let &#91;tag &#40;System/getenv &quot;CIRCLE&#95;TAG&quot;&#41;&#93;
+    &#40;do
+      &#40;println &quot;Found tag &quot; tag&#41;
+      &#40;if &#40;re-find &#40;re-pattern release-marker&#41; tag&#41;
+        &#40;do
+          &#40;println &quot;Deploying to clojars...&quot;&#41;
+          &#40;-&gt; opts
+              &#40;assoc :lib lib :version &#40;extract-version tag&#41;&#41;
+              &#40;bb/jar&#41;
+              &#40;bb/deploy&#41;&#41;&#41;
+        &#40;do
+          &#40;println &quot;Tag is not a release tag, skipping deploy&quot;&#41;
+          opts&#41;&#41;&#41;
+    &#40;do
+      &#40;println &quot;No tag found, skipping deploy&quot;&#41;
+      opts&#41;&#41;&#41;
+</code></pre><h2 id="running&#95;it">Running it</h2><p>From here, you just run <code>clojure -T:build maybe-deploy</code>. Insert that command in your config.yml. <a href='https://github.com/ingesolvoll/re-statecharts/blob/main/.circleci/config.yml'>Here's a working example YAML</a></p>
+</div>
+
+<br/>
+
+    <div id="prev-next">
         
-        <li>
-            Nov 21 - <a href="/posts/2021-11-21-deploying-to-clojars/">Deploying to clojars</a>
-        </li>
         
-    </ul>
+        <a class="right button" href="/posts/2021-07-05-specced-re-frame/">A la carte specs for your re-frame subs and events &raquo;</a>
+        
+    </div>
+
     
-    <h4>2021 July</h4>
-    <ul>
-        
-        <li>
-            Jul 05 - <a href="/posts/2021-07-05-specced-re-frame/">A la carte specs for your re-frame subs and events</a>
-        </li>
-        
-    </ul>
-    
-    <h4>2018 December</h4>
-    <ul>
-        
-        <li>
-            Dec 04 - <a href="/posts/2018-12-04-revisited-how-to-use-a-charting-library-in-re-frame/">Revisited: How to use a charting library in reagent</a>
-        </li>
-        
-    </ul>
-    
-    <h4>2018 June</h4>
-    <ul>
-        
-        <li>
-            Jun 18 - <a href="/posts/2018-06-18-kee-frame-controller-tricks/">Kee-frame controller tricks</a>
-        </li>
-        
-    </ul>
-    
-    <h4>2018 April</h4>
-    <ul>
-        
-        <li>
-            Apr 01 - <a href="/posts/2018-04-01-kee-frame-putting-the-url-in-charge/">Kee-frame: Putting the URL in charge</a>
-        </li>
-        
-        <li>
-            Apr 01 - <a href="/posts/2018-04-01-learning-kee-frame-in-5-minutes/">Learning kee-frame in 5 minutes</a>
-        </li>
-        
-    </ul>
-    
-    <h4>2017 June</h4>
-    <ul>
-        
-        <li>
-            Jun 29 - <a href="/posts/2017-06-29-re-frame-side-effects-as-data/">Re-frame: side effects as data</a>
-        </li>
-        
-        <li>
-            Jun 22 - <a href="/posts/2017-06-22-plain-react-vs-reagent/">JSX vs Clojurescript: the showdown</a>
-        </li>
-        
-    </ul>
-    
-    <h4>2017 January</h4>
-    <ul>
-        
-        <li>
-            Jan 01 - <a href="/posts/2017-01-01-how-to-use-a-charting-library-in-reagent/">How to use a charting library in Reagent</a>
-        </li>
-        
-    </ul>
-    
-    <h4>2016 December</h4>
-    <ul>
-        
-        <li>
-            Dec 26 - <a href="/posts/2016-12-26-how-boot-solved-our-ftp-upload-problem/">How boot solved our FTP problem</a>
-        </li>
-        
-    </ul>
-    
-    <h4>2016 March</h4>
-    <ul>
-        
-        <li>
-            Mar 26 - <a href="/posts/2016-03-26-railway-oriented-programming-with-clojurescript/">Railway oriented programming with Clojurescript</a>
-        </li>
-        
-    </ul>
-    
+
+
 </div>
 
 <hr/>
